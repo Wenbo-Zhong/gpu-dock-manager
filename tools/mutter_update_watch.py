@@ -10,6 +10,10 @@ import subprocess
 import sys
 import tempfile
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1])
+                if Path(__file__).resolve().parent.name == 'tools' else '/usr/lib/usb4-gpu-manager')
+from usb4_gpu_manager.i18n import tr
+
 
 def command(*args, check=True):
     return subprocess.run(args, check=check, capture_output=True, text=True,
@@ -98,8 +102,8 @@ def check(config, state_path):
     except (FileNotFoundError, json.JSONDecodeError):
         pass
     notify = shutil.which("notify-send")
-    if notify and command(notify, "--app-name=USB4 GPU Manager", "Mutter 有新版",
-                          f"{config['package']} {latest} 已发布。请用 mutter-egpu-port 技能移植补丁、编译和验证。",
+    if notify and command(notify, "--app-name=USB4 GPU Manager", tr('A new Mutter version is available'),
+                          tr('{package} {version} is available. Use the mutter-egpu-port skill to port, build and validate the patch.').format(package=config['package'], version=latest),
                           check=False).returncode == 0:
         save(state_path, state)
 

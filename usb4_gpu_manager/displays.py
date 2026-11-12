@@ -3,6 +3,8 @@
 API reference: GNOME/mutter 50.1 data/dbus-interfaces/
 org.gnome.Mutter.DisplayConfig.xml. Only temporary configurations are applied.
 """
+
+from .i18n import tr
 import copy
 import json
 import os
@@ -32,7 +34,7 @@ def monitor_map(state):
     for spec, modes, properties in state[1]:
         name = spec[0]
         if name in monitors:
-            raise RuntimeError("桌面报告了重复显示接口，无法确定显示器归属。")
+            raise RuntimeError(tr('The desktop reported duplicate connector names; monitor ownership is ambiguous.'))
         monitors[name] = {"spec": list(spec), "modes": modes, "properties": properties}
     return monitors
 
@@ -46,10 +48,10 @@ def configuration(state):
         for spec in specs:
             monitor = monitors[spec[0]]
             if list(spec) != monitor["spec"]:
-                raise RuntimeError("显示器身份发生变化，请刷新后重试。")
+                raise RuntimeError(tr('Monitor identity changed. Refresh and try again.'))
             current = [m for m in monitor["modes"] if m[6].get("is-current")]
             if len(current) != 1:
-                raise RuntimeError("无法唯一读取当前显示模式，拒绝修改布局。")
+                raise RuntimeError(tr('Cannot uniquely identify the current display mode; configuration changes refused.'))
             props = monitor["properties"]
             output_props = {k: props[k] for k in ("color-mode", "rgb-range") if k in props}
             if "is-underscanning" in props:
@@ -60,7 +62,7 @@ def configuration(state):
     if state[3].get("supports-changing-layout-mode"):
         props["layout-mode"] = state[3].get("layout-mode", 1)
     if any(m["properties"].get("is-for-lease") for m in monitors.values()):
-        raise RuntimeError("存在租赁给其他应用的显示器，请先结束显示租赁。")
+        raise RuntimeError(tr('A monitor is leased to another application. End the display lease first.'))
     return {"groups": groups, "properties": props}
 
 
@@ -70,7 +72,7 @@ def target_outputs(data):
     supported_internal = (gpu and gpu["pci"] == internal.get("pci") and gpu["driver"] == "nvidia"
                           and not internal.get("reason"))
     if not gpu or gpu.get("boot_vga") or not (gpu.get("external") or supported_internal):
-        raise RuntimeError("没有可唯一识别且已加载的目标显卡。")
+        raise RuntimeError(tr('No unique loaded target GPU is available.'))
     owners = {}
     for device in data.get("gpus", []):
         for connector in device["connectors"]:
@@ -80,9 +82,9 @@ def target_outputs(data):
         if connector["kind"] != "external":
             continue
         if owners.get(connector["name"]) != [gpu["pci"]]:
-            raise RuntimeError("多个 GPU 的显示接口名称重复，拒绝修改归属不明的屏幕。")
+            raise RuntimeError(tr('Multiple GPUs have the same connector name; ambiguous monitors will not be changed.'))
         if connector["status"] not in {"connected", "disconnected"}:
-            raise RuntimeError("外接显示器连接状态未知，请刷新后重试。")
+            raise RuntimeError(tr('External monitor connection state is unknown. Refresh and try again.'))
         if connector["status"] == "connected":
             outputs.add(connector["name"])
     return outputs
@@ -106,20 +108,20 @@ def internal_outputs(data):
 
 def disable_plan(state, data):
     if not data.get("service_connected") or not data.get("can_mutate_devices"):
-        raise RuntimeError("设备状态不可用或已过期，请先恢复状态采集。")
+        raise RuntimeError(tr('Device status is unavailable or stale. Restore status collection first.'))
     if data.get("operation", {}).get("state") in BUSY:
-        raise RuntimeError("显卡操作正在进行，请等待完成或取消预约。")
+        raise RuntimeError(tr('A GPU operation is in progress. Wait or cancel the queued request.'))
     outputs = target_outputs(data)
     monitors = monitor_map(state)
     if not outputs.issubset(monitors):
-        raise RuntimeError("内核与桌面报告的外屏不一致，请刷新后重试。")
+        raise RuntimeError(tr('Kernel and desktop monitor reports differ. Refresh and try again.'))
     if any(monitors[name]["properties"].get("is-builtin") for name in outputs):
-        raise RuntimeError("目标接口被桌面识别为内屏，拒绝停用。")
+        raise RuntimeError(tr('The desktop identifies the target connector as an internal panel; disabling refused.'))
     if not outputs.intersection(active_outputs(state)):
-        raise RuntimeError("这张显卡没有正在输出的外接屏幕。")
+        raise RuntimeError(tr('This GPU has no active external monitor outputs.'))
     ready = internal_outputs(data).intersection(active_outputs(state))
     if not any(monitors[n]["properties"].get("is-builtin") for n in ready):
-        raise RuntimeError("请先在 GNOME 显示设置中启用另一张显卡驱动的内屏，再停用外屏。")
+        raise RuntimeError(tr("Enable another GPU's internal panel in GNOME Display Settings before disabling external outputs."))
     before = configuration(state)
     after = copy.deepcopy(before)
     for group in after["groups"]:
@@ -179,7 +181,7 @@ class DesktopDisplays:
         allowed = self._call("Get", GLib.Variant("(ss)", (NAME, "ApplyMonitorsConfigAllowed")),
                              "org.freedesktop.DBus.Properties")[0]
         if not allowed:
-            raise RuntimeError("当前 GNOME 会话不允许修改显示配置。")
+            raise RuntimeError(tr('This GNOME session does not allow display configuration changes.'))
         return self._call("GetCurrentState")
 
     def _apply(self, state, config, method):
@@ -216,16 +218,16 @@ class DesktopDisplays:
                 backup = load_json(self.backup_path)
                 summary["can_restore"] = self._restorable(state, data, backup)
                 if backup and not summary["can_restore"]:
-                    summary["restore_reason"] = "恢复要求同一张显卡、相同屏幕及停用后的布局；如已改动，请用 GNOME 显示设置启用外屏。"
+                    summary["restore_reason"] = tr('Restoration requires the same GPU, monitors and post-disable layout. If anything changed, enable outputs in GNOME Display Settings.')
                 return summary
             except Exception as error:
                 return {"supported": False, "can_disable": False, "can_restore": False, "monitors": [],
-                        "reason": "无法控制当前桌面的外屏：" + str(error)}
+                        "reason": tr("Cannot control this desktop's monitors: ") + str(error)}
 
     def disable(self, data, expected_pci):
         with self.lock:
             if (data.get("target") or {}).get("pci") != expected_pci:
-                raise RuntimeError("目标显卡已变化，取消停用外屏。")
+                raise RuntimeError(tr('The target GPU changed; monitor disabling cancelled.'))
             state = self.read()
             before, after, outputs = disable_plan(state, data)
             self._apply(state, after, 0)  # Mutter validation, no display changes.
@@ -236,19 +238,19 @@ class DesktopDisplays:
             self._apply(state, after, 1)
             current = self.read()
             if set(outputs).intersection(active_outputs(current)) or config_key(configuration(current)) != config_key(after):
-                raise RuntimeError("桌面尚未确认外屏停用后的布局，请查看显示设置；显卡尚未移除。")
-            return "外屏已停用，显卡仍保持连接；可以继续计算，或单独检查安全移除条件。"
+                raise RuntimeError(tr('The desktop has not confirmed the post-disable layout. Check Display Settings; the GPU has not been removed.'))
+            return tr('External outputs disabled; the GPU remains connected. Continue computing or check safe-removal conditions separately.')
 
     def restore(self, data, expected_pci=None):
         with self.lock:
             if expected_pci is not None and (data.get("target") or {}).get("pci") != expected_pci:
-                raise RuntimeError("目标显卡已变化，取消恢复外屏。")
+                raise RuntimeError(tr('The target GPU changed; monitor restoration cancelled.'))
             state, backup = self.read(), load_json(self.backup_path)
             if not self._restorable(state, data, backup):
-                raise RuntimeError("屏幕连接或布局已变化，不能覆盖当前配置；请用 GNOME 显示设置启用外屏。")
+                raise RuntimeError(tr('Monitor connections or layout changed. Enable outputs in GNOME Display Settings to avoid overwriting your configuration.'))
             self._apply(state, backup["before"], 0)
             self._apply(state, backup["before"], 1)
             if config_key(configuration(self.read())) != config_key(backup["before"]):
-                raise RuntimeError("桌面尚未确认恢复原布局，请检查 GNOME 显示设置。")
+                raise RuntimeError(tr('The desktop has not confirmed layout restoration. Check GNOME Display Settings.'))
             self.backup_path.unlink(missing_ok=True)
-            return "已恢复停用前的外屏布局。"
+            return tr('The previous external monitor layout was restored.')

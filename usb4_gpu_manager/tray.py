@@ -1,4 +1,6 @@
 """GTK4-compatible StatusNotifierItem and DBusMenu, without GTK3 bindings."""
+
+from .i18n import tr
 from gi.repository import Gio, GLib
 
 ITEM_XML = '''<node><interface name="org.kde.StatusNotifierItem">
@@ -74,7 +76,7 @@ class Tray:
     def properties(item):
         if item == 0:
             return {'children-display': GLib.Variant('s', 'submenu')}
-        title = {1: '显示窗口', 2: '隐藏到托盘', 3: '退出'}[item]
+        title = {1: tr('Show window'), 2: tr('Hide in tray'), 3: tr('Quit')}[item]
         return {'label': GLib.Variant('s', title), 'enabled': GLib.Variant('b', True),
                 'visible': GLib.Variant('b', True)}
 

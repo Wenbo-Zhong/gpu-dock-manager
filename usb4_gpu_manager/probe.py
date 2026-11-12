@@ -1,4 +1,6 @@
 """Run hardware/driver sysfs access in bounded, separately killable processes."""
+
+from .i18n import tr
 import json
 from pathlib import Path
 import sys
@@ -15,7 +17,7 @@ def bounded_snapshot(profile=None, metrics=False):
                           json.dumps({"profile": profile or {}, "metrics": metrics})],
                          timeout=5, guard_key=("hardware-snapshot",))
     except subprocess.TimeoutExpired as error:
-        raise RuntimeError("驱动状态查询超时，已隔离该查询；连接状态仍会独立更新。") from error
+        raise RuntimeError(tr('Driver status query timed out and was isolated; connection status still updates independently.')) from error
     return json.loads(result.stdout)
 
 

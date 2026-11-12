@@ -1,0 +1,1566 @@
+# GPU Dock Manager translation template. GPL-3.0-only.
+msgid ""
+msgstr "Project-Id-Version: GPU Dock Manager\nMIME-Version: 1.0\nContent-Type: text/plain; charset=UTF-8\nContent-Transfer-Encoding: 8bit\n"
+
+#: usb4_gpu_manager/gui.py:632
+msgid "\nBack up and migrate:\n"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:559
+msgid " · desktop output active"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:559
+msgid " · desktop output disabled"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:559
+msgid " · disabled in kernel"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:559
+msgid " · enabled in kernel"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:719
+msgid " · no release needed for this action"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:719
+msgid " · release required"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:721
+msgid " · released automatically"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:169
+#, python-brace-format
+msgid " · {p0} active / {p1} connected"
+msgstr ""
+
+#: usb4_gpu_manager/internal_gpu.py:269
+#, python-brace-format
+msgid "4070 driver switch failed: {p0}{p1}"
+msgstr ""
+
+#: usb4_gpu_manager/controller.py:251
+msgid "4070 driver switch timed out. Check the device state; restart if needed to restore the boot configuration."
+msgstr ""
+
+#: usb4_gpu_manager/controller.py:226
+msgid "4070 loaded"
+msgstr ""
+
+#: usb4_gpu_manager/controller.py:226
+msgid "4070 switched to VFIO"
+msgstr ""
+
+#: usb4_gpu_manager/internal_gpu.py:268
+msgid "; partial rollback failed: "
+msgstr ""
+
+#: usb4_gpu_manager/internal_gpu.py:268
+msgid "; the original driver bindings were restored."
+msgstr ""
+
+#: usb4_gpu_manager/displays.py:113 usb4_gpu_manager/kde_displays.py:86
+msgid "A GPU operation is in progress. Wait or cancel the queued request."
+msgstr ""
+
+#: usb4_gpu_manager/controller.py:101
+msgid "A driver call is still blocked in the kernel. Duplicate calls are paused; save your work and restart to recover."
+msgstr ""
+
+#: usb4_gpu_manager/displays.py:65
+msgid "A monitor is leased to another application. End the display lease first."
+msgstr ""
+
+#: tools/mutter_update_watch.py:105
+msgid "A new Mutter version is available"
+msgstr ""
+
+#: usb4_gpu_manager/daemon.py:99
+msgid "Administrator authorization was denied."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:324
+msgid "After reinstalling Linux, select devices and deploy again. Existing configuration is backed up, and all changes can be previewed."
+msgstr ""
+
+#: usb4_gpu_manager/internal_gpu.py:138
+msgid "Already loaded; no further load is needed."
+msgstr ""
+
+#: usb4_gpu_manager/internal_gpu.py:138
+msgid "Already unloaded; no further unload is needed."
+msgstr ""
+
+#: usb4_gpu_manager/hardware.py:235
+msgid "An external connector has an unknown state; removal refused."
+msgstr ""
+
+#: usb4_gpu_manager/internal_gpu.py:52
+msgid "An unsupported driver binding exists."
+msgstr ""
+
+#: usb4_gpu_manager/controller.py:304
+msgid "Another driver holds the target GPU; takeover refused."
+msgstr ""
+
+#: usb4_gpu_manager/daemon.py:111
+msgid "Another operation is in progress."
+msgstr ""
+
+#: usb4_gpu_manager/controller.py:399
+msgid "Another operation is in progress. Wait or cancel the queued request."
+msgstr ""
+
+#: usb4_gpu_manager/internal_gpu.py:224
+#, python-brace-format
+msgid "Another tool has set driver_override for {p0}."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:628
+msgid "Authorize and deploy"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:751
+msgid "Authorize and restore"
+msgstr ""
+
+#: usb4_gpu_manager/controller.py:175
+msgid "Automatic connection failed: "
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:339
+msgid "Back up and migrate existing configuration"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:505
+msgid "Based on this eGPU's DRM connectors"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:710
+msgid "Before unloading, pause nvidia-powerd and, if needed, briefly stop WirePlumber (audio may be interrupted). Restore WirePlumber after the operation. Restore nvidia-powerd if unloading fails or when the GPU is loaded again."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:627 usb4_gpu_manager/gui.py:651 usb4_gpu_manager/gui.py:670 usb4_gpu_manager/gui.py:750 usb4_gpu_manager/gui.py:683
+msgid "Cancel"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:300
+msgid "Cancel request"
+msgstr ""
+
+#: usb4_gpu_manager/daemon.py:102
+msgid "Cancel takes no options."
+msgstr ""
+
+#: usb4_gpu_manager/controller.py:484
+msgid "Cancelling the queued request."
+msgstr ""
+
+#: usb4_gpu_manager/internal_gpu.py:121
+msgid "Cannot confirm the internal 4070 driver state."
+msgstr ""
+
+#: usb4_gpu_manager/kde_displays.py:146
+msgid "Cannot control KDE monitors: "
+msgstr ""
+
+#: usb4_gpu_manager/displays.py:225
+msgid "Cannot control this desktop's monitors: "
+msgstr ""
+
+#: usb4_gpu_manager/hardware.py:233
+msgid "Cannot determine this GPU's monitor state; removal refused."
+msgstr ""
+
+#: usb4_gpu_manager/hardware.py:237
+msgid "Cannot fully inspect holders. Check again using the privileged management service."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:695
+msgid "Cannot inspect the 4070: "
+msgstr ""
+
+#: usb4_gpu_manager/kde_displays.py:75
+msgid "Cannot read monitor priority."
+msgstr ""
+
+#: usb4_gpu_manager/kde_displays.py:35
+msgid "Cannot read the complete monitor EDID: "
+msgstr ""
+
+#: usb4_gpu_manager/kde_displays.py:69
+msgid "Cannot read the current display mode."
+msgstr ""
+
+#: usb4_gpu_manager/displays.py:54
+msgid "Cannot uniquely identify the current display mode; configuration changes refused."
+msgstr ""
+
+#: usb4_gpu_manager/kde_displays.py:32
+msgid "Cannot uniquely map the KDE output to DRM: "
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:761
+msgid "Changing this desktop's external outputs…"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:652
+msgid "Check and remove"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:683
+msgid "Close"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:517
+msgid "Configuration deployed · Restart required"
+msgstr ""
+
+#: usb4_gpu_manager/controller.py:426
+msgid "Configuration deployed; restart before reconnecting."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:422
+msgid "Configuration deployed; restart first."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:490
+msgid "Configuration deployed; save your work and restart"
+msgstr ""
+
+#: usb4_gpu_manager/daemon.py:121
+msgid "Configuration is too large."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:685
+msgid "Confirm switch"
+msgstr ""
+
+#: usb4_gpu_manager/controller.py:423
+msgid "Connect an identifiable external GPU or deploy management configuration first."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:605
+msgid "Connect and select the target external GPU."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:423
+msgid "Connect the external GPU first."
+msgstr ""
+
+#: usb4_gpu_manager/deployment.py:70
+msgid "Connect the target GPU. Automatic deployment does not yet support multiple GPUs with the same PCI ID."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:545 usb4_gpu_manager/gui.py:406
+msgid "Connected"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:500
+msgid "Connection state unknown"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:278
+msgid "Connections, displays, compute and resume recovery in one place."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:810
+msgid "Copied."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:365
+msgid "Copy diagnostic status"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:357
+msgid "Copy install command"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:701
+#, python-brace-format
+msgid "Current state · {p0}"
+msgstr ""
+
+#: usb4_gpu_manager/deployment.py:118
+msgid "Deploy one management service, retain NVIDIA's official sleep services, back up existing configuration and update initramfs. Restart to apply."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:626
+msgid "Deploy this device policy?"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:324 usb4_gpu_manager/gui.py:227
+msgid "Deployment and recovery"
+msgstr ""
+
+#: usb4_gpu_manager/deployment.py:187
+msgid "Deployment complete; existing configuration backed up. Save your work and restart to enable unified management."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:336
+msgid "Deployment contents"
+msgstr ""
+
+#: usb4_gpu_manager/deployment.py:155
+msgid "Deployment currently supports Ubuntu/Debian systems using initramfs-tools."
+msgstr ""
+
+#: usb4_gpu_manager/deployment.py:183
+msgid "Deployment failed and configuration was restored, but rebuilding initramfs failed. Check /boot space and run sudo update-initramfs -u -k all."
+msgstr ""
+
+#: usb4_gpu_manager/daemon.py:95
+msgid "Detailed device status is stale or driver cleanup is incomplete. Recover the driver first."
+msgstr ""
+
+#: usb4_gpu_manager/presence.py:69
+msgid "Detailed device status is stale; device operations are paused."
+msgstr ""
+
+#: usb4_gpu_manager/daemon.py:171
+msgid "Detailed hardware status update failed: "
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:488
+#, python-brace-format
+msgid "Detailed status is stale ({p0:.0f} seconds since the last update). Showing independent USB4 connectivity."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:99
+msgid "Detecting"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:123
+msgid "Detecting monitor ownership…"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:327
+msgid "Device policy"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:517
+msgid "Device policy not migrated; existing system configuration remains active"
+msgstr ""
+
+#: usb4_gpu_manager/displays.py:111 usb4_gpu_manager/kde_displays.py:84
+msgid "Device status is unavailable or stale. Restore status collection first."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:363
+msgid "Device, deployment and sleep events from the management service. Exported status excludes process command lines and environment variables."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:319 usb4_gpu_manager/gui.py:226
+msgid "Devices and monitors"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:671 usb4_gpu_manager/gui.py:127
+msgid "Disable monitors"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:177
+msgid "Disable only this GPU's display outputs."
+msgstr ""
+
+#: usb4_gpu_manager/internal_gpu.py:72
+msgid "Disable the 4070's display outputs and confirm connector states first."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:668
+msgid "Disable this GPU's external monitors?"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:545 usb4_gpu_manager/gui.py:406
+msgid "Disconnected"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:769
+msgid "Display operation failed: "
+msgstr ""
+
+#: usb4_gpu_manager/kde_displays.py:181
+msgid "Display topology changed. The backup is retained; restore the layout in KDE Display Settings."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:404
+msgid "Driver error"
+msgstr ""
+
+#: usb4_gpu_manager/controller.py:377
+msgid "Driver removal exceeded 25 seconds. Device release is unconfirmed; monitoring continues. Do not unplug or retry removal yet."
+msgstr ""
+
+#: usb4_gpu_manager/internal_gpu.py:127
+msgid "Driver state changed during inspection. Try again."
+msgstr ""
+
+#: usb4_gpu_manager/internal_gpu.py:241
+msgid "Driver state changed. Refresh and try again."
+msgstr ""
+
+#: usb4_gpu_manager/probe.py:20
+msgid "Driver status query timed out and was isolated; connection status still updates independently."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:402
+msgid "Driver unbound"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:133
+msgid "Drivers and device"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:338
+msgid "Enable NVIDIA kernel suspend notifiers; do not unload solely because no monitor is connected."
+msgstr ""
+
+#: usb4_gpu_manager/displays.py:124
+msgid "Enable another GPU's internal panel in GNOME Display Settings before disabling external outputs."
+msgstr ""
+
+#: usb4_gpu_manager/kde_displays.py:99
+msgid "Enable another GPU's internal panel in KDE Display Settings first."
+msgstr ""
+
+#: usb4_gpu_manager/internal_gpu.py:64
+msgid "Enable the AMD-driven internal panel first."
+msgstr ""
+
+#: usb4_gpu_manager/controller.py:439
+msgid "Enable the laptop panel driven by another GPU before queuing removal after logout."
+msgstr ""
+
+#: usb4_gpu_manager/controller.py:110
+msgid "Entering sleep; display connections: "
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:363 usb4_gpu_manager/gui.py:228
+msgid "Events"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:286
+msgid "External GPU"
+msgstr ""
+
+#: usb4_gpu_manager/controller.py:171
+msgid "External GPU bound to NVIDIA; display outputs and CUDA are available."
+msgstr ""
+
+#: usb4_gpu_manager/controller.py:235
+msgid "External GPU loaded"
+msgstr ""
+
+#: usb4_gpu_manager/hardware.py:295
+msgid "External GPU monitor state: "
+msgstr ""
+
+#: usb4_gpu_manager/controller.py:237
+msgid "External GPU: "
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:286 usb4_gpu_manager/gui.py:401
+msgid "External NVIDIA GPU"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:557
+msgid "External connector"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:500
+msgid "External monitor connected"
+msgstr ""
+
+#: usb4_gpu_manager/displays.py:87
+msgid "External monitor connection state is unknown. Refresh and try again."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:505
+msgid "External monitors"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:412
+msgid "External output disabled"
+msgstr ""
+
+#: usb4_gpu_manager/displays.py:242
+msgid "External outputs disabled; the GPU remains connected. Continue computing or check safe-removal conditions separately."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:573
+msgid "Failed"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:392
+msgid "Failed to read status: "
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:488
+msgid "Fetching detailed device status; USB4 connectivity is monitored independently."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:446
+msgid "Fixed connection"
+msgstr ""
+
+#: usb4_gpu_manager/controller.py:429
+msgid "GPU connected; display outputs and CUDA are available."
+msgstr ""
+
+#: usb4_gpu_manager/worker.py:20
+msgid "GPU identity changed"
+msgstr ""
+
+#: usb4_gpu_manager/client.py:112
+msgid "GPU operation completed"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:112
+msgid "GPU power"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:525
+msgid "GPU safely removed"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:278
+msgid "GPU status"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:111
+msgid "GPU temperature"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:701
+#, python-brace-format
+msgid "Graphics driver {p0}   HDMI audio {p1}"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:699
+msgid "Graphics loaded; audio driver differs"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:455
+#, python-brace-format
+msgid "HDMI audio · {p0}   IOMMU group · {p1}"
+msgstr ""
+
+#: usb4_gpu_manager/tray.py:79
+msgid "Hide in tray"
+msgstr ""
+
+#: usb4_gpu_manager/controller.py:373
+msgid "Holder checks passed. Removing GPU and audio devices; keep USB4 connected until completion."
+msgstr ""
+
+#: usb4_gpu_manager/internal_gpu.py:141 usb4_gpu_manager/internal_gpu.py:78
+msgid "Holder inspection is incomplete; driver switching is blocked."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:733
+msgid "Holder scan is incomplete."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:319
+msgid "Identify GPUs and monitors by PCI ownership; show connection and enable states separately."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:353
+msgid "If the management service is not installed, run this command from the source directory. You can deploy device policies here after installation."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:569
+msgid "Inactive is normal after a one-shot task completes."
+msgstr ""
+
+#: usb4_gpu_manager/deployment.py:60
+msgid "Initial deployment supports only NVIDIA external GPUs; other devices are read-only."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:295
+msgid "Inspect holders"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:352
+msgid "Install background components"
+msgstr ""
+
+#: usb4_gpu_manager/controller.py:417
+msgid "Internal 4070 graphics and HDMI audio loaded with host drivers."
+msgstr ""
+
+#: usb4_gpu_manager/controller.py:418
+msgid "Internal 4070 graphics and HDMI audio switched to VFIO isolation."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:681
+msgid "Internal 4070 holders"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:285
+msgid "Internal GPU"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:507
+msgid "Internal GPU isolation"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:334
+msgid "Internal NVIDIA GPU isolation"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:285
+msgid "Internal PCIe"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:206
+msgid "Internal and external GPUs · Local management"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:557
+msgid "Internal panel"
+msgstr ""
+
+#: usb4_gpu_manager/worker.py:17
+msgid "Invalid PCI address"
+msgstr ""
+
+#: usb4_gpu_manager/deployment.py:56
+msgid "Invalid PCI device selector."
+msgstr ""
+
+#: usb4_gpu_manager/kde_displays.py:71
+msgid "Invalid display rotation or scale."
+msgstr ""
+
+#: usb4_gpu_manager/daemon.py:64 usb4_gpu_manager/internal_gpu.py:25
+msgid "Invalid internal GPU PCI address."
+msgstr ""
+
+#: usb4_gpu_manager/deployment.py:53
+msgid "Invalid internal GPU list."
+msgstr ""
+
+#: usb4_gpu_manager/kde_displays.py:73
+msgid "Invalid monitor position."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:443
+msgid "Isolated"
+msgstr ""
+
+#: usb4_gpu_manager/kde_displays.py:188
+msgid "KDE external outputs disabled. The GPU remains connected; check holders again before safe removal."
+msgstr ""
+
+#: usb4_gpu_manager/kde_displays.py:206
+msgid "KDE has not confirmed layout restoration; the backup is retained."
+msgstr ""
+
+#: usb4_gpu_manager/kde_displays.py:174
+msgid "KDE has not confirmed that the internal panel remains enabled."
+msgstr ""
+
+#: usb4_gpu_manager/kde_displays.py:168
+msgid "KDE has not confirmed that the target outputs are disabled."
+msgstr ""
+
+#: usb4_gpu_manager/kde_displays.py:66
+msgid "KDE layouts that automatically follow the preferred mode are not supported yet. Select a fixed resolution first."
+msgstr ""
+
+#: usb4_gpu_manager/kde_displays.py:61
+msgid "KDE mirrored layouts are not supported yet. Switch to an extended layout in System Settings."
+msgstr ""
+
+#: usb4_gpu_manager/kde_displays.py:208
+msgid "KDE monitor layout restored."
+msgstr ""
+
+#: usb4_gpu_manager/kde_displays.py:59
+msgid "KDE output names or IDs are not unique."
+msgstr ""
+
+#: usb4_gpu_manager/kde_displays.py:172
+msgid "KDE unexpectedly changed another monitor's settings."
+msgstr ""
+
+#: usb4_gpu_manager/kde_displays.py:49
+msgid "KScreen returned no valid monitor list."
+msgstr ""
+
+#: usb4_gpu_manager/system.py:20
+msgid "KWin still holds the GPU. Disabling monitors may not release it; automatic reclamation is not integrated yet."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:338
+msgid "Keep display outputs and CUDA"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:735
+msgid "Keep the AMD internal panel enabled. Holders will be checked again before switching."
+msgstr ""
+
+#: usb4_gpu_manager/kde_displays.py:92
+msgid "Kernel and KDE monitor reports differ. Refresh and try again."
+msgstr ""
+
+#: usb4_gpu_manager/displays.py:117
+msgid "Kernel and desktop monitor reports differ. Refresh and try again."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:506
+msgid "Kernel suspend notifiers enabled"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:508
+msgid "Last resume"
+msgstr ""
+
+#: usb4_gpu_manager/kde_displays.py:184
+msgid "Layout restoration was not confirmed."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:291
+msgid "Load"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:456
+msgid "Load or unload the GPU and HDMI audio drivers."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:454
+msgid "Load the driver to detect HDMI monitors"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:681
+msgid "Load the internal 4070?"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:698 usb4_gpu_manager/gui.py:443
+msgid "Loaded"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:650
+msgid "Log out and safely remove?"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:337
+msgid "Manage device detection, delayed loading, resume recovery and events in one place."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:486
+msgid "Management service disconnected · Read-only preview"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:562
+msgid "Missing connectors do not mean no monitor is connected when the driver is unbound."
+msgstr ""
+
+#: usb4_gpu_manager/kde_displays.py:166
+msgid "Monitor connections changed while disabling outputs."
+msgstr ""
+
+#: usb4_gpu_manager/controller.py:455
+msgid "Monitor connections changed; queued removal cancelled."
+msgstr ""
+
+#: usb4_gpu_manager/displays.py:250
+msgid "Monitor connections or layout changed. Enable outputs in GNOME Display Settings to avoid overwriting your configuration."
+msgstr ""
+
+#: usb4_gpu_manager/kde_displays.py:161
+msgid "Monitor connections or layout changed. Refresh and try again."
+msgstr ""
+
+#: usb4_gpu_manager/displays.py:51
+msgid "Monitor identity changed. Refresh and try again."
+msgstr ""
+
+#: usb4_gpu_manager/kde_displays.py:196
+msgid "Monitor identity or layout changed. Restore outputs in KDE Display Settings."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:122
+msgid "Monitors"
+msgstr ""
+
+#: usb4_gpu_manager/displays.py:85
+msgid "Multiple GPUs have the same connector name; ambiguous monitors will not be changed."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:504
+msgid "NVIDIA driver"
+msgstr ""
+
+#: usb4_gpu_manager/controller.py:316
+msgid "NVIDIA modules loaded, but GPU binding did not complete."
+msgstr ""
+
+#: usb4_gpu_manager/deployment.py:153
+msgid "NVIDIA open kernel modules with kernel suspend notifier support are required. Install your distribution's driver first."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:328
+msgid "NVIDIA supported initially; the selected target will not be isolated."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:562
+msgid "No DRM connectors yet"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:584
+msgid "No NVIDIA device found"
+msgstr ""
+
+#: usb4_gpu_manager/deployment.py:139
+msgid "No complete deployment backup is available."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:412
+msgid "No controllable external monitors"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:329
+msgid "No device detected yet"
+msgstr ""
+
+#: usb4_gpu_manager/controller.py:139
+msgid "No external GPU detected after resume; waiting for a connection."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:500
+msgid "No external monitor connected"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:731
+msgid "No holders found."
+msgstr ""
+
+#: usb4_gpu_manager/deployment.py:194
+msgid "No manager deployment is available to roll back."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:172
+msgid "No monitor connected"
+msgstr ""
+
+#: usb4_gpu_manager/controller.py:482
+msgid "No queued removal to cancel."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:503
+msgid "No resume event recorded by this service yet"
+msgstr ""
+
+#: usb4_gpu_manager/controller.py:299
+msgid "No stable external GPU found. Check power and the USB4 cable."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:441
+msgid "No supported internal GPU detected"
+msgstr ""
+
+#: usb4_gpu_manager/displays.py:75
+msgid "No unique loaded target GPU is available."
+msgstr ""
+
+#: usb4_gpu_manager/cli.py:51
+msgid "No unique target GPU."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:506
+msgid "Not configured / driver not loaded"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:444
+msgid "Not detected"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:571
+msgid "Not installed"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:507
+msgid "Not isolated"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:85 usb4_gpu_manager/gui.py:504
+msgid "Not read"
+msgstr ""
+
+#: usb4_gpu_manager/cli.py:23
+msgid "Offline recovery requires sudo usb4-gpu-managerctl recover"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:337
+msgid "One custom management service"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:80
+msgid "Operation failed. See Events for details."
+msgstr ""
+
+#: usb4_gpu_manager/controller.py:466
+msgid "Operation failed: "
+msgstr ""
+
+#: usb4_gpu_manager/daemon.py:113
+msgid "Operation submitted."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:334
+msgid "Optional. Devices using VFIO are selected by default. GPUs driving monitors cannot be isolated."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:225
+msgid "Overview"
+msgstr ""
+
+#: usb4_gpu_manager/deployment.py:58
+msgid "PCI IDs must use the 0x1234 format."
+msgstr ""
+
+#: usb4_gpu_manager/cli.py:17
+msgid "PCI address for an internal GPU action"
+msgstr ""
+
+#: usb4_gpu_manager/controller.py:388
+msgid "PCI device removed. Some idle modules still have kernel references and were not forcibly unloaded."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:402
+msgid "PCI not identified"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:555
+msgid "PCI power state"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:403 usb4_gpu_manager/gui.py:442
+msgid "PCI power · "
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:700
+msgid "Partially bound"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:444
+msgid "Partially loaded"
+msgstr ""
+
+#: usb4_gpu_manager/controller.py:209
+msgid "Power or USB4 state changed. Automatic switching was skipped this time; use manual controls if needed."
+msgstr ""
+
+#: usb4_gpu_manager/controller.py:238
+msgid "Power or USB4 state changed; no driver switch is needed."
+msgstr ""
+
+#: usb4_gpu_manager/deployment.py:204
+msgid "Pre-deployment configuration restored. Restart your computer."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:506
+msgid "Preserve VRAM and display outputs"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:343
+msgid "Preview deployment changes"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:339
+msgid "Preview files to be replaced. A restart is required after updating initramfs."
+msgstr ""
+
+#: usb4_gpu_manager/controller.py:221
+msgid "Processing a power or USB4 state change…"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:652
+msgid "Queue removal and open logout confirmation"
+msgstr ""
+
+#: usb4_gpu_manager/controller.py:447
+msgid "Queued removal cancelled."
+msgstr ""
+
+#: usb4_gpu_manager/tray.py:79
+msgid "Quit"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:210
+msgid "Quit application"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:682
+msgid "Reading current drivers and holders…"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:279
+msgid "Reading local status…"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:297
+msgid "Reconnect"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:207
+msgid "Refresh status"
+msgstr ""
+
+#: usb4_gpu_manager/internal_gpu.py:82
+msgid "Release NVIDIA, VFIO or audio device holders first: "
+msgstr ""
+
+#: usb4_gpu_manager/internal_gpu.py:144
+msgid "Release the holders listed below first."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:429
+msgid "Removal after logout requires an internal panel driven by another GPU."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:806
+msgid "Removal queued. Log out using the desktop menu, or cancel the request."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:299
+msgid "Remove after logout"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:405
+msgid "Removed"
+msgstr ""
+
+#: usb4_gpu_manager/controller.py:372
+msgid "Requesting device removal. Keep USB4 connected; do not unplug yet."
+msgstr ""
+
+#: usb4_gpu_manager/displays.py:221
+msgid "Restoration requires the same GPU, monitors and post-disable layout. If anything changed, enable outputs in GNOME Display Settings."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:749
+msgid "Restore backed-up files and rebuild initramfs. A restart is required."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:128
+msgid "Restore monitors"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:346
+msgid "Restore previous configuration"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:749
+msgid "Restore the pre-deployment configuration?"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:178
+msgid "Restore the saved display layout."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:503
+msgid "Resume complete"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:87
+msgid "Resuming"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:86 usb4_gpu_manager/gui.py:572
+msgid "Running"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:555
+msgid "Runtime power management"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:312
+msgid "Runtime status"
+msgstr ""
+
+#: usb4_gpu_manager/controller.py:443
+msgid "Safe removal queued. The next GNOME session will temporarily skip this GPU while waiting for current holders to release it."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:298
+msgid "Safely remove"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:650
+msgid "Safely remove the external GPU?"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:425
+msgid "Safely removed · USB4 disconnected"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:426
+msgid "Safely removed · You may unplug USB4"
+msgstr ""
+
+#: usb4_gpu_manager/controller.py:390
+msgid "Safely removed. You may unplug the GPU cable. Reconnect USB4 or click Reconnect to use it again."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:452
+msgid "Sampling pauses while the GPU sleeps. When the driver is loaded and the GPU is active in D0, metrics refresh every 10 seconds."
+msgstr ""
+
+#: usb4_gpu_manager/system.py:18
+msgid "Save your terminal work, then close all Ptyxis terminal windows and try again."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:669
+msgid "Save your work and enable another GPU's internal panel. Only the target GPU's external outputs will stop; the GPU and compute tasks stay connected. The desktop may reposition other monitors. Use Restore monitors to recover the layout. Check removal conditions separately afterward."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:649
+msgid "Save your work and enable the internal panel. The manager will queue removal and open KDE logout confirmation. Wait at the login screen after logout; immediately signing back into KDE may reacquire the GPU. The existing GPU-ignore rule applies only to GNOME. KDE logout removal still needs hardware testing. The request expires after 180 seconds. Unplug only after the manager confirms safe removal."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:646
+msgid "Save your work and enable the internal panel. This GPU's external outputs will stop; monitor cables may stay connected. The manager will queue removal and open logout confirmation. Sign in using the internal panel, and unplug only after confirmation. The request expires after 180 seconds if the GPU remains held."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:423
+msgid "Scan PCIe and load the driver."
+msgstr ""
+
+#: usb4_gpu_manager/deployment.py:50
+msgid "Select one unique target GPU."
+msgstr ""
+
+#: usb4_gpu_manager/controller.py:278
+msgid "Select the target GPU on the Deployment page first."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:569
+msgid "Service integration"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:717
+msgid "Shared or other NVIDIA nodes"
+msgstr ""
+
+#: usb4_gpu_manager/tray.py:79
+msgid "Show window"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:450
+msgid "Sleeping"
+msgstr ""
+
+#: usb4_gpu_manager/controller.py:415
+msgid "Specify the internal 4070 PCI address."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:405
+msgid "Status stale"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:764
+msgid "Submitting to the management service…"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:506
+msgid "Suspend and resume"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:86
+msgid "Suspended"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:86
+msgid "Suspending"
+msgstr ""
+
+#: usb4_gpu_manager/deployment.py:64
+msgid "Switch fields must be Boolean values."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:503
+msgid "System resumed; no GPU connected"
+msgstr ""
+
+#: usb4_gpu_manager/controller.py:115
+msgid "System resumed; no external GPU was connected before sleep."
+msgstr ""
+
+#: usb4_gpu_manager/controller.py:115
+msgid "System resumed; waiting for the USB4/PCIe path to stabilize."
+msgstr ""
+
+#: usb4_gpu_manager/controller.py:389
+msgid "Target GPU and audio function removed from PCI. You may unplug the GPU cable."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:328
+msgid "Target external GPU"
+msgstr ""
+
+#: usb4_gpu_manager/worker.py:62
+msgid "Target has another driver"
+msgstr ""
+
+#: usb4_gpu_manager/worker.py:24
+msgid "Target is not a display-class GPU"
+msgstr ""
+
+#: usb4_gpu_manager/worker.py:22
+msgid "Target is not a removable NVIDIA GPU"
+msgstr ""
+
+#: usb4_gpu_manager/controller.py:476
+msgid "Temporary display rule cleanup was incomplete: "
+msgstr ""
+
+#: usb4_gpu_manager/internal_gpu.py:74
+msgid "The 4070 provides a system framebuffer; its driver cannot be switched now."
+msgstr ""
+
+#: usb4_gpu_manager/internal_gpu.py:67
+msgid "The 4070 still has a connected monitor; keeping its driver."
+msgstr ""
+
+#: usb4_gpu_manager/controller.py:362
+msgid "The GPU changed; removal cancelled."
+msgstr ""
+
+#: usb4_gpu_manager/deployment.py:79
+msgid "The GPU selected for isolation drives a monitor. Adjust display connections first."
+msgstr ""
+
+#: usb4_gpu_manager/internal_gpu.py:37
+msgid "The IOMMU group must contain only the 4070 graphics and audio functions."
+msgstr ""
+
+#: usb4_gpu_manager/kde_displays.py:63
+msgid "The KDE output enable state is unknown."
+msgstr ""
+
+#: usb4_gpu_manager/deployment.py:72
+msgid "The PCI subsystem does not identify the target as a removable external GPU."
+msgstr ""
+
+#: usb4_gpu_manager/hardware.py:223
+msgid "The PCI subsystem does not mark this device as removable; automatic removal is refused."
+msgstr ""
+
+#: usb4_gpu_manager/internal_gpu.py:33
+msgid "The boot GPU cannot be switched."
+msgstr ""
+
+#: usb4_gpu_manager/deployment.py:126
+#, python-brace-format
+msgid "The configuration path is a symbolic link and requires manual inspection: {p0}"
+msgstr ""
+
+#: usb4_gpu_manager/displays.py:254
+msgid "The desktop has not confirmed layout restoration. Check GNOME Display Settings."
+msgstr ""
+
+#: usb4_gpu_manager/displays.py:241
+msgid "The desktop has not confirmed the post-disable layout. Check Display Settings; the GPU has not been removed."
+msgstr ""
+
+#: usb4_gpu_manager/displays.py:119
+msgid "The desktop identifies the target connector as an internal panel; disabling refused."
+msgstr ""
+
+#: usb4_gpu_manager/displays.py:37
+msgid "The desktop reported duplicate connector names; monitor ownership is ambiguous."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:858
+msgid "The desktop tray is unavailable; keeping the window accessible."
+msgstr ""
+
+#: usb4_gpu_manager/presence.py:82
+msgid "The device disconnected or disappeared from PCI. Safe removal is not confirmed; do not act on cached status."
+msgstr ""
+
+#: usb4_gpu_manager/daemon.py:82
+msgid "The device is being updated. Inspect the 4070 again later."
+msgstr ""
+
+#: usb4_gpu_manager/internal_gpu.py:31
+msgid "The graphics or audio function does not match the supported internal RTX 4070."
+msgstr ""
+
+#: usb4_gpu_manager/client.py:77
+msgid "The internal GPU changed or its driver is not loaded."
+msgstr ""
+
+#: usb4_gpu_manager/deployment.py:158
+msgid "The legacy GPU loading service is busy. Wait before migrating."
+msgstr ""
+
+#: usb4_gpu_manager/daemon.py:183
+msgid "The manager daemon must run as root through systemd."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:647
+msgid "The manager will recheck monitors and holders, then remove the GPU and its audio function. Unplug USB4 only after safe-removal confirmation."
+msgstr ""
+
+#: usb4_gpu_manager/kde_displays.py:203
+msgid "The original display mode is unavailable or has changed; restoration refused."
+msgstr ""
+
+#: usb4_gpu_manager/controller.py:367
+msgid "The other GPU's internal panel is not enabled. Removal cancelled; enable the laptop panel first."
+msgstr ""
+
+#: usb4_gpu_manager/system.py:40
+msgid "The previous driver call has not exited; duplicate requests are paused."
+msgstr ""
+
+#: usb4_gpu_manager/displays.py:256
+msgid "The previous external monitor layout was restored."
+msgstr ""
+
+#: usb4_gpu_manager/deployment.py:74
+msgid "The selected device is the boot GPU or drives an internal panel. Choose another external GPU."
+msgstr ""
+
+#: usb4_gpu_manager/deployment.py:67
+msgid "The stabilization delay must be between 5 and 30 seconds."
+msgstr ""
+
+#: usb4_gpu_manager/controller.py:247 usb4_gpu_manager/controller.py:405
+msgid "The system is preparing to sleep. Resume before operating the GPU."
+msgstr ""
+
+#: usb4_gpu_manager/deployment.py:62
+msgid "The target GPU cannot also be selected for isolation."
+msgstr ""
+
+#: usb4_gpu_manager/controller.py:270
+msgid "The target GPU changed. Refresh and try again."
+msgstr ""
+
+#: usb4_gpu_manager/displays.py:230 usb4_gpu_manager/kde_displays.py:151
+msgid "The target GPU changed; monitor disabling cancelled."
+msgstr ""
+
+#: usb4_gpu_manager/displays.py:247 usb4_gpu_manager/kde_displays.py:193
+msgid "The target GPU changed; monitor restoration cancelled."
+msgstr ""
+
+#: usb4_gpu_manager/controller.py:302
+msgid "The target GPU has not appeared."
+msgstr ""
+
+#: usb4_gpu_manager/hardware.py:221
+msgid "The target GPU is missing or multiple matching GPUs prevent unique identification."
+msgstr ""
+
+#: usb4_gpu_manager/hardware.py:242
+#, python-brace-format
+msgid "The target GPU uses {p0}; this version will not remove it."
+msgstr ""
+
+#: usb4_gpu_manager/presence.py:75
+msgid "The target device disconnected or was removed from PCI."
+msgstr ""
+
+#: usb4_gpu_manager/kde_displays.py:94
+msgid "The target is identified as an internal panel; disabling refused."
+msgstr ""
+
+#: usb4_gpu_manager/displays.py:184
+msgid "This GNOME session does not allow display configuration changes."
+msgstr ""
+
+#: usb4_gpu_manager/displays.py:121 usb4_gpu_manager/kde_displays.py:97
+msgid "This GPU has no active external monitor outputs."
+msgstr ""
+
+#: usb4_gpu_manager/hardware.py:225
+msgid "This GPU is the boot GPU or drives an internal panel and cannot be safely removed."
+msgstr ""
+
+#: usb4_gpu_manager/hardware.py:231
+msgid "This GPU still has an external monitor. Disable its outputs and enable another GPU's internal panel, or disconnect the monitor cable."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:708
+msgid "This action switches only the HDMI audio driver; checking audio and VFIO holders."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:717
+msgid "This device"
+msgstr ""
+
+#: usb4_gpu_manager/controller.py:460
+msgid "Timed out waiting for GPU release. The request was cancelled and display access restored."
+msgstr ""
+
+#: usb4_gpu_manager/cli.py:14
+msgid "USB4 GPU Manager local client"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:24
+msgid "USB4 GPU Manager requires GTK 4.12+ and libadwaita 1.4+."
+msgstr ""
+
+#: usb4_gpu_manager/controller.py:131
+msgid "USB4 device disconnected; automatic connection is allowed again."
+msgstr ""
+
+#: usb4_gpu_manager/presence.py:77
+msgid "USB4 is disconnected, but the kernel still retains the PCI device. Driver cleanup may be incomplete."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:286
+msgid "USB4 receive speed"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:404
+msgid "Unexpected disconnect"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:517
+msgid "Unified management enabled"
+msgstr ""
+
+#: usb4_gpu_manager/daemon.py:155
+msgid "Unified management service started."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:87 usb4_gpu_manager/gui.py:545 usb4_gpu_manager/gui.py:88 usb4_gpu_manager/gui.py:503
+msgid "Unknown"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:441
+msgid "Unknown driver"
+msgstr ""
+
+#: usb4_gpu_manager/daemon.py:76
+msgid "Unknown method."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:293
+msgid "Unload"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:681
+msgid "Unload the internal 4070?"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:698
+msgid "Unloaded and isolated"
+msgstr ""
+
+#: usb4_gpu_manager/deployment.py:46
+msgid "Unsupported configuration fields."
+msgstr ""
+
+#: usb4_gpu_manager/internal_gpu.py:214
+msgid "Unsupported internal GPU action"
+msgstr ""
+
+#: usb4_gpu_manager/controller.py:397
+msgid "Unsupported operation or options."
+msgstr ""
+
+#: usb4_gpu_manager/daemon.py:72
+msgid "Unsupported request."
+msgstr ""
+
+#: usb4_gpu_manager/worker.py:73
+msgid "Unsupported worker action"
+msgstr ""
+
+#: usb4_gpu_manager/cli.py:34
+msgid "Use --pci to specify the internal 4070 PCI address."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:111
+msgid "VRAM usage"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:557
+msgid "Virtual connector"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:864
+msgid "Wait for the current operation to finish, or cancel the queued request, before exiting."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:503
+msgid "Waiting for USB4 to stabilize"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:573
+msgid "Waiting for an event / completed"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:444 usb4_gpu_manager/gui.py:406
+msgid "Waiting for driver"
+msgstr ""
+
+#: usb4_gpu_manager/controller.py:442
+msgid "Waiting for logout and GPU release. Queued removal does not mean you may unplug. The request expires in 180 seconds."
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:521
+msgid "Waiting for management events. Before installation, use journalctl to inspect existing service logs."
+msgstr ""
+
+#: usb4_gpu_manager/controller.py:402
+msgid "Working…"
+msgstr ""
+
+#: usb4_gpu_manager/gui.py:238
+#, python-brace-format
+msgid "v{p0} · Local management"
+msgstr ""
+
+#: usb4_gpu_manager/hardware.py:240
+#, python-brace-format
+msgid "{p0} (PID {p1}) is holding the GPU."
+msgstr ""
+
+#: usb4_gpu_manager/internal_gpu.py:209
+#, python-brace-format
+msgid "{p0} did not switch to {p1}."
+msgstr ""
+
+#: usb4_gpu_manager/internal_gpu.py:222
+#, python-brace-format
+msgid "{p0} is bound to an unsupported driver."
+msgstr ""
+
+#: usb4_gpu_manager/client.py:112
+#, python-brace-format
+msgid "{p0}; failed to restore WirePlumber: {p1}"
+msgstr ""
+
+#: usb4_gpu_manager/internal_gpu.py:185
+#, python-brace-format
+msgid "{p0}; failed to restore nvidia-powerd: {p1}"
+msgstr ""
+
+#: usb4_gpu_manager/kde_displays.py:186
+#, python-brace-format
+msgid "{p0}; layout recovery failed: {p1}"
+msgstr ""
+
+#: usb4_gpu_manager/kde_displays.py:187
+#, python-brace-format
+msgid "{p0}; the original layout was restored."
+msgstr ""
+
+#: tools/mutter_update_watch.py:106
+#, python-brace-format
+msgid "{package} {version} is available. Use the mutter-egpu-port skill to port, build and validate the patch."
+msgstr ""
+

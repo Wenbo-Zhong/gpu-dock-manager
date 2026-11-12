@@ -12,7 +12,7 @@ jobs:
       - name: Install test and package tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y python3-gi gir1.2-gtk-4.0 gir1.2-adw-1 dbus-x11 desktop-file-utils libglib2.0-dev pkg-config gcc rpm
+          sudo apt-get install -y python3-gi gir1.2-gtk-4.0 gir1.2-adw-1 dbus-x11 desktop-file-utils libglib2.0-dev pkg-config gcc rpm gettext
       - name: Unit, isolated D-Bus, static and sanitized C checks
         run: make check poc-check
       - name: Build packages (not hardware validation)

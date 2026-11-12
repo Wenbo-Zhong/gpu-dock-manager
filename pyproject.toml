@@ -16,3 +16,6 @@ usb4-gpu-managerctl = "usb4_gpu_manager.cli:main"
 
 [tool.setuptools.packages.find]
 include = ["usb4_gpu_manager*"]
+
+[tool.setuptools.package-data]
+usb4_gpu_manager = ["locales/*/LC_MESSAGES/*.po", "locales/*/LC_MESSAGES/*.mo", "locales/*.pot"]

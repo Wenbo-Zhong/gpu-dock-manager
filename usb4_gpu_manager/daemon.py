@@ -1,4 +1,6 @@
 """System-bus API. Reads are unprivileged; every mutation checks Polkit."""
+
+from .i18n import tr
 import json
 import logging
 import os
@@ -59,7 +61,7 @@ class Service:
         elif method == "GetInternalGpuStatus":
             pci = parameters.unpack()[0]
             if len(pci) != 12:
-                self.reply(invocation, error="无效的内置显卡 PCI 地址。")
+                self.reply(invocation, error=tr('Invalid internal GPU PCI address.'))
                 return
             self.pool.submit(self._internal_status, pci, invocation)
         elif method == "PreviewDeployment":
@@ -67,17 +69,17 @@ class Service:
         elif method == "Perform":
             action, raw = parameters.unpack()
             if len(raw) > 16384 or action not in {"attach", "detach", "queue-detach", "cancel-detach", "deploy", "rollback", *INTERNAL_ACTIONS}:
-                self.reply(invocation, error="不受支持的请求。")
+                self.reply(invocation, error=tr('Unsupported request.'))
                 return
             self.pool.submit(self._perform, sender, action, raw, invocation)
         else:
-            self.reply(invocation, error="未知方法。")
+            self.reply(invocation, error=tr('Unknown method.'))
 
     def _internal_status(self, pci, invocation):
         try:
             # Do not report a partially switched pair while a job owns the device lock.
             if not self.controller.device_lock.acquire(blocking=False):
-                raise RuntimeError("设备正在更新，请稍后检查 4070 状态。")
+                raise RuntimeError(tr('The device is being updated. Inspect the 4070 again later.'))
             try:
                 status = bounded_internal_status(pci)
             finally:
@@ -90,14 +92,14 @@ class Service:
         try:
             options = json.loads(raw)
             if action in {"attach", "detach", "queue-detach", *INTERNAL_ACTIONS} and not self.controller.get_status().get("can_mutate_devices", False):
-                raise RuntimeError("设备详细状态已过期或驱动清理未完成，请先恢复驱动。")
+                raise RuntimeError(tr('Detailed device status is stale or driver cleanup is incomplete. Recover the driver first.'))
             authorization = ("manage-internal" if action in INTERNAL_ACTIONS else
                              "configure" if action in {"deploy", "rollback"} else "manage")
             if not self.authorized(sender, authorization):
-                raise PermissionError("管理员授权未通过。")
+                raise PermissionError(tr('Administrator authorization was denied.'))
             if action == "cancel-detach":
                 if options:
-                    raise ValueError("取消操作不接收参数。")
+                    raise ValueError(tr('Cancel takes no options.'))
                 value = self.controller.cancel()
             elif action in INTERNAL_ACTIONS:
                 # Keep the session client's audio-release scope alive until the
@@ -106,9 +108,9 @@ class Service:
             else:
                 # Return immediately after authorization; progress is exposed in GetStatus.
                 if self.controller.operation_lock.locked():
-                    raise RuntimeError("已有操作正在进行。")
+                    raise RuntimeError(tr('Another operation is in progress.'))
                 self.pool.submit(self._job, action, options)
-                value = "操作已提交。"
+                value = tr('Operation submitted.')
             GLib.idle_add(self.reply, invocation, value)
         except Exception as error:
             GLib.idle_add(self.reply, invocation, None, error)
@@ -116,7 +118,7 @@ class Service:
     def _preview(self, raw, invocation):
         try:
             if len(raw) > 16384:
-                raise ValueError("配置过大。")
+                raise ValueError(tr('Configuration is too large.'))
             GLib.idle_add(self.reply, invocation, plan(json.loads(raw), gpu_inventory()))
         except Exception as error:
             GLib.idle_add(self.reply, invocation, None, error)
@@ -150,7 +152,7 @@ class Service:
                                     "PrepareForSleep", "/org/freedesktop/login1", None,
                                     Gio.DBusSignalFlags.NONE, self.sleep_signal)
         threading.Thread(target=self.monitor, daemon=True).start()
-        self.controller.event("统一管理服务已启动。")
+        self.controller.event(tr('Unified management service started.'))
 
     def sleep_signal(self, connection, sender, path, interface, signal, parameters):
         self.controller.prepare_for_sleep(parameters.unpack()[0])
@@ -166,7 +168,7 @@ class Service:
                 self.controller.tick()
             except Exception as error:
                 if self.controller.last_error != str(error):
-                    self.controller.event("硬件详细状态更新失败：" + str(error))
+                    self.controller.event(tr('Detailed hardware status update failed: ') + str(error))
                 self.controller.last_error = str(error)
             self.stopping.wait(3)
 
@@ -178,7 +180,7 @@ class Service:
 
     def run(self):
         if os.geteuid() != 0:
-            raise SystemExit("The manager daemon must run as root through systemd.")
+            raise SystemExit(tr('The manager daemon must run as root through systemd.'))
         Gio.bus_own_name(Gio.BusType.SYSTEM, BUS_NAME, Gio.BusNameOwnerFlags.NONE,
                          self.acquired, None, lambda *_: self.loop.quit())
         GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, 15, self.stop)
@@ -187,5 +189,6 @@ class Service:
 
 
 def main():
+    os.environ['GPU_DOCK_LANGUAGE'] = 'en'
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     Service().run()

@@ -10,3 +10,4 @@ prune research
 prune screenshots
 
 include LICENSE NOTICE.md
+recursive-include usb4_gpu_manager/locales *.po *.mo *.pot

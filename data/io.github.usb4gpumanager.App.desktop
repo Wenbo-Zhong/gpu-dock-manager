@@ -9,3 +9,7 @@ Terminal=false
 Type=Application
 Categories=Settings;HardwareSettings;
 StartupNotify=true
+Name[zh_TW]=USB4 外接顯示卡管理員
+Name[zh_HK]=USB4 外接顯示卡管理員
+Comment[zh_TW]=管理外接顯示卡、顯示器與睡眠恢復
+Comment[zh_HK]=管理外接顯示卡、顯示器與睡眠恢復

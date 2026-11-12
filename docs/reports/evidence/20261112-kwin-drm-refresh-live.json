@@ -1,0 +1,44 @@
+{
+  "date": "2026-11-12",
+  "source": "user-provided live experiment output",
+  "experiment": "one targeted DRM change event",
+  "pci": "0000:03:00.0",
+  "gpu": "RTX PRO 5000 72GB Blackwell",
+  "desktop": "KDE Plasma Wayland",
+  "before": {
+    "complete": true,
+    "holder_names": [
+      "systemd",
+      "systemd-logind",
+      "kwin_wayland",
+      "Xwayland"
+    ],
+    "external_connectors": "all disconnected and disabled",
+    "detach_check_safe": false
+  },
+  "after": [
+    {
+      "complete": true,
+      "holder_names": [],
+      "detach_check_safe": true
+    },
+    {
+      "complete": true,
+      "holder_names": [],
+      "detach_check_safe": true
+    },
+    {
+      "complete": true,
+      "holder_names": [],
+      "detach_check_safe": true
+    }
+  ],
+  "pci_removed": false,
+  "safe_to_unplug": false,
+  "limitations": [
+    "Single trial only",
+    "Physical safe removal and reconnect not yet verified",
+    "Startup-order explanation remains a hypothesis",
+    "External-monitor disable followed by reclamation not yet tested"
+  ]
+}

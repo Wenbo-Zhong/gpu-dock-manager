@@ -8,7 +8,8 @@ establish hardware or desktop compatibility.
 | Ubuntu 26.04, GNOME 50.1, NVIDIA open 595 driver | Development environment; selected hardware workflows tested |
 | Fedora / other RPM distributions | RPM packaging exists; deployment and hardware behavior not validated |
 | Debian / other DEB distributions | Package generation exists; versions, deployment and hardware behavior not validated |
-| KDE / other desktops | Standard tray protocol implemented; monitor control currently uses GNOME Mutter APIs |
+| KDE Plasma 6.6 Wayland | Tray and read-only KScreen status verified; display changes implemented with mocked tests, real external-output tests pending |
+| Other desktops | Standard tray protocol implemented; compositor-specific monitor adapters still needed |
 
 ## Current constraints
 
@@ -21,7 +22,9 @@ establish hardware or desktop compatibility.
   on another distribution without porting it first.
 - Internal GPU switching currently targets only the validated RTX 4070 PCI IDs
   10de:2820 / 10de:22bd, with strict IOMMU and AMD internal-display checks.
-- Display changes use GNOME Mutter session D-Bus. Other compositors need adapters.
+- Display changes use GNOME Mutter session D-Bus or KDE KScreen (`kscreen-doctor`).
+  KDE requires the optional kscreen package. Mirrored KDE layouts are currently rejected.
+  See kde-compatibility.md for the tested scope and remaining KWin holder issue.
 - Optional Mutter patches are version-specific and must be reviewed, ported and
   rebuilt against the exact distribution source. The application package does
   not replace the system compositor. See mutter-porting.md.

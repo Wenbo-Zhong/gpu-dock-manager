@@ -1,4 +1,8 @@
+
+from .i18n import tr
+from .i18n import localize_payload, translate_text
 import json
+import os
 
 from gi.repository import Gio, GLib
 
@@ -10,6 +14,7 @@ from .probe import bounded_snapshot as snapshot
 from .presence import observe, remember_transport
 from .internal_gpu import internal_switch_blocker, internal_switch_needed
 from .system import command
+from .kde_displays import KdeDisplays
 
 
 class Client:
@@ -17,17 +22,22 @@ class Client:
         self.connection = None
         self.local_events = None
         self.last_status = {}
-        self.displays = DesktopDisplays()
-        self.internal_displays = DesktopDisplays(internal=True)
+        desktop = KdeDisplays if 'KDE' in os.environ.get('XDG_CURRENT_DESKTOP', '').upper().split(':') else DesktopDisplays
+        self.displays = desktop()
+        self.internal_displays = desktop(internal=True)
 
     def call(self, method, values=(), signature=None, timeout=10000):
         if self.connection is None:
             self.connection = Gio.bus_get_sync(Gio.BusType.SYSTEM, None)
-        value = self.connection.call_sync(BUS_NAME, BUS_PATH, INTERFACE, method,
+        try:
+            value = self.connection.call_sync(BUS_NAME, BUS_PATH, INTERFACE, method,
                                           GLib.Variant(signature, values) if signature else None,
                                           GLib.VariantType.new("(s)"), Gio.DBusCallFlags.NONE,
-                                          timeout, None)
-        return json.loads(value.unpack()[0])
+                                              timeout, None)
+        except GLib.Error as error:
+            error.message = translate_text(error.message)
+            raise
+        return localize_payload(json.loads(value.unpack()[0]))
 
     def status(self):
         data = self.device_status()
@@ -64,7 +74,7 @@ class Client:
             selected = internal_display_data(self.device_status())
             pci = (options or {}).get("expected_pci")
             if not pci or (selected.get("target") or {}).get("pci") != pci:
-                raise RuntimeError("目标内置显卡已变化或驱动尚未加载。")
+                raise RuntimeError(tr('The internal GPU changed or its driver is not loaded.'))
             if action == "internal-disable-displays":
                 return self.internal_displays.disable(selected, pci)
             return self.internal_displays.restore(selected, pci)
@@ -99,7 +109,7 @@ class Client:
                 try:
                     command(["systemctl", "--user", "start", "wireplumber.service"], timeout=15)
                 except Exception as restore_error:
-                    raise RuntimeError(f"{error or '显卡操作已完成'}；恢复 WirePlumber 失败：{restore_error}") from restore_error
+                    raise RuntimeError(tr('{p0}; failed to restore WirePlumber: {p1}').format(p0=error or tr('GPU operation completed'), p1=restore_error)) from restore_error
 
     def preview(self, profile):
         return self.call("PreviewDeployment", (json.dumps(profile),), "(s)")

@@ -15,6 +15,7 @@ Requires:       polkit
 Requires:       kmod
 Recommends:     libnotify
 Recommends:     python3-rpm
+Suggests:       kscreen
 
 %description
 Manages external NVIDIA GPUs and their display outputs.

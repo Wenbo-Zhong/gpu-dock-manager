@@ -1,4 +1,6 @@
 """Read-only hardware discovery; never assume stable card numbers or PCI BDFs."""
+
+from .i18n import tr
 import csv
 import io
 from pathlib import Path
@@ -216,28 +218,28 @@ def other_internal_display_ready(gpus, gpu):
 def detach_check(gpu, occupied, allow_connected=False, other_display_ready=False):
     blockers = []
     if gpu is None:
-        return {"safe": False, "blockers": ["目标显卡不存在，或有多个同型号设备，无法唯一识别。"]}
+        return {"safe": False, "blockers": [tr('The target GPU is missing or multiple matching GPUs prevent unique identification.')]}
     if not gpu.get("external", False):
-        blockers.append("PCI 子系统未将此设备标记为可移除设备，拒绝自动移除。")
+        blockers.append(tr('The PCI subsystem does not mark this device as removable; automatic removal is refused.'))
     if gpu["boot_vga"] or any(c["kind"] == "internal" and c["status"] == "connected" for c in gpu["connectors"]):
-        blockers.append("该显卡是启动显卡或连接内屏，不能安全移除。")
+        blockers.append(tr('This GPU is the boot GPU or drives an internal panel and cannot be safely removed.'))
     external = [c for c in gpu["connectors"] if c["kind"] == "external"]
     disabled = bool(external and all(c.get("enabled") == "disabled" for c in external)
                     and all(c["status"] in {"connected", "disconnected"} for c in external)
                     and other_display_ready)
     if gpu["external_display_state"] == "connected" and not allow_connected and not disabled:
-        blockers.append("该显卡仍连接外屏；请先停用外屏并启用另一张显卡的内屏，或拔掉显示器线。")
+        blockers.append(tr("This GPU still has an external monitor. Disable its outputs and enable another GPU's internal panel, or disconnect the monitor cable."))
     elif gpu["external_display_state"] not in {"connected", "disconnected"}:
-        blockers.append("无法确定该显卡的显示器状态，拒绝移除。")
+        blockers.append(tr("Cannot determine this GPU's monitor state; removal refused."))
     if allow_connected and any(c["status"] not in {"connected", "disconnected"} for c in gpu["connectors"] if c["kind"] == "external"):
-        blockers.append("外接接口存在未知状态，拒绝移除。")
+        blockers.append(tr('An external connector has an unknown state; removal refused.'))
     if not occupied["complete"]:
-        blockers.append("无法完整检查进程占用，请通过管理员服务重新检查。")
+        blockers.append(tr('Cannot fully inspect holders. Check again using the privileged management service.'))
     for process in occupied["processes"]:
         hint = gpu_holder_hint(process)
-        blockers.append(f'{process["name"]}（PID {process["pid"]}）正在占用显卡。' + (" " + hint if hint else ""))
+        blockers.append(tr('{p0} (PID {p1}) is holding the GPU.').format(p0=process['name'], p1=process['pid']) + (" " + hint if hint else ""))
     if gpu["driver"] not in {"nvidia", "unbound"}:
-        blockers.append(f'目标显卡由 {gpu["driver"]} 使用，当前版本不执行移除。')
+        blockers.append(tr('The target GPU uses {p0}; this version will not remove it.').format(p0=gpu['driver']))
     return {"safe": not blockers, "blockers": blockers}
 
 
@@ -290,7 +292,7 @@ def recent_events():
                     continue
                 if entry.get("SYSLOG_IDENTIFIER") == "egpu-display-status":
                     display = json.loads(message).get("egpu_display_state", "unknown")
-                    message = "外接显卡显示器状态：" + display
+                    message = tr('External GPU monitor state: ') + display
                 events.append({"time": int(entry["__REALTIME_TIMESTAMP"]) / 1e6,
                                "message": message[:2000]})
             except (ValueError, KeyError, TypeError):

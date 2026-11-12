@@ -10,6 +10,7 @@ app="$root/usr/lib/usb4-gpu-manager"
 share="$root/usr/share/usb4-gpu-manager"
 install -d "$app/usb4_gpu_manager" "$root/usr/bin" "$share/mutter-poc/overlay" "$share/skills/mutter-egpu-port"
 install -m 0644 usb4_gpu_manager/*.py "$app/usb4_gpu_manager/"
+cp -R usb4_gpu_manager/locales "$app/usb4_gpu_manager/"
 install -m 0644 data/gui_entry.py data/cli_entry.py data/daemon_entry.py "$app/"
 for entry in 'usb4-gpu-manager gui_entry' 'usb4-gpu-managerctl cli_entry'; do
     set -- $entry

@@ -1,4 +1,6 @@
 """Fast transport observation, independent of DRM/NVML and device-operation locks."""
+
+from .i18n import tr
 import copy
 from pathlib import Path
 import time
@@ -64,19 +66,19 @@ def observe(data, root=Path("/sys"), now=None):
         result["metrics"] = []
         for router in result["usb4"]:
             router["rx_speed"] = router["tx_speed"] = "unknown"
-        result["detach"] = {"safe": False, "blockers": ["设备详细状态已过期，暂停设备操作。"]}
+        result["detach"] = {"safe": False, "blockers": [tr('Detailed device status is stale; device operations are paused.')]}
     if device_gone:
         result["last_known_target"] = gpu
         result["target"] = None
         result["gpus"] = [g for g in result.get("gpus", []) if g["pci"] != gpu["pci"]]
         result["metrics"] = []
-        result["detach"] = {"safe": False, "blockers": ["目标设备已断开或已从 PCI 总线移除。"]}
+        result["detach"] = {"safe": False, "blockers": [tr('The target device disconnected or was removed from PCI.')]}
         if router_gone and pci_visible:
-            result["last_error"] = "USB4 已断开，但内核仍保留 PCI 设备，驱动清理可能尚未完成。"
+            result["last_error"] = tr('USB4 is disconnected, but the kernel still retains the PCI device. Driver cleanup may be incomplete.')
         operation = result.get("operation", {})
         if (operation.get("state") in {"running", "waiting", "removing"}
                 and operation.get("action") in {"attach", "detach", "queue-detach"}):
             result["operation"] = dict(operation, backend_state=operation["state"],
-                state="error", message="设备已断开或从 PCI 总线消失；后台尚未确认安全移除完成，请勿依据旧状态重新操作。")
+                state="error", message=tr('The device disconnected or disappeared from PCI. Safe removal is not confirmed; do not act on cached status.'))
     result["can_mutate_devices"] = not result["status_stale"] and not result["transport"]["driver_cleanup_pending"] and not result.get("blocked_io", False)
     return result

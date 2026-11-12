@@ -43,6 +43,8 @@ install -d -m 0755 /usr/lib/usb4-gpu-manager/usb4_gpu_manager /usr/share/dbus-1/
 for file in "$source_dir"/usb4_gpu_manager/*.py; do
     install -o root -g root -m 0644 "$file" /usr/lib/usb4-gpu-manager/usb4_gpu_manager/
 done
+cp -R "$source_dir/usb4_gpu_manager/locales" /usr/lib/usb4-gpu-manager/usb4_gpu_manager/
+chown -R root:root /usr/lib/usb4-gpu-manager/usb4_gpu_manager/locales
 for file in gui_entry.py daemon_entry.py cli_entry.py; do
     install -o root -g root -m 0644 "$source_dir/data/$file" /usr/lib/usb4-gpu-manager/
 done

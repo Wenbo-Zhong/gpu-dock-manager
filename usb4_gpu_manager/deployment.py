@@ -1,4 +1,6 @@
 """Versioned, reversible Ubuntu/NVIDIA configuration deployment."""
+
+from .i18n import tr
 import base64
 import json
 import os
@@ -41,40 +43,40 @@ def suggested_profile(gpus):
 
 def validate_profile(profile, gpus):
     if not isinstance(profile, dict) or set(profile) - {"schema", "enabled", "target", "protected", "stable_seconds", "keep_path_awake"}:
-        raise ValueError("配置字段不受支持。")
+        raise ValueError(tr('Unsupported configuration fields.'))
     for key in ("target",):
         value = profile.get(key)
         if not isinstance(value, dict) or set(value) != {"vendor", "device"}:
-            raise ValueError("必须选择唯一的目标显卡。")
+            raise ValueError(tr('Select one unique target GPU.'))
     protected = profile.get("protected", [])
     if not isinstance(protected, list) or len(protected) > 8:
-        raise ValueError("内置显卡列表无效。")
+        raise ValueError(tr('Invalid internal GPU list.'))
     for selector in [profile["target"], *protected]:
         if not isinstance(selector, dict) or set(selector) != {"vendor", "device"}:
-            raise ValueError("PCI 设备选择器无效。")
+            raise ValueError(tr('Invalid PCI device selector.'))
         if not all(isinstance(x, str) and re.fullmatch(r"0x[0-9a-f]{4}", x) for x in selector.values()):
-            raise ValueError("PCI ID 必须为 0x1234 格式。")
+            raise ValueError(tr('PCI IDs must use the 0x1234 format.'))
     if profile["target"]["vendor"] != "0x10de":
-        raise ValueError("首版仅部署 NVIDIA 外接显卡；其他设备只读展示。")
+        raise ValueError(tr('Initial deployment supports only NVIDIA external GPUs; other devices are read-only.'))
     if profile["target"] in protected:
-        raise ValueError("目标显卡不能同时被隔离。")
+        raise ValueError(tr('The target GPU cannot also be selected for isolation.'))
     if type(profile.get("enabled", True)) is not bool or type(profile.get("keep_path_awake", True)) is not bool:
-        raise ValueError("开关字段必须为布尔值。")
+        raise ValueError(tr('Switch fields must be Boolean values.'))
     stable = profile.get("stable_seconds", 12)
     if type(stable) is not int or not 5 <= stable <= 30:
-        raise ValueError("稳定等待时间必须为 5–30 秒。")
+        raise ValueError(tr('The stabilization delay must be between 5 and 30 seconds.'))
     gpu = target_gpu(gpus, profile)
     if not gpu:
-        raise ValueError("请连接目标显卡；多个相同 PCI ID 的显卡暂不支持自动部署。")
+        raise ValueError(tr('Connect the target GPU. Automatic deployment does not yet support multiple GPUs with the same PCI ID.'))
     if not gpu.get("external"):
-        raise ValueError("目标设备不是 PCI 子系统标记的可移除外接显卡。")
+        raise ValueError(tr('The PCI subsystem does not identify the target as a removable external GPU.'))
     if gpu["boot_vga"] or any(c["kind"] == "internal" and c["status"] == "connected" for c in gpu["connectors"]):
-        raise ValueError("所选设备是启动显卡或内屏显卡，请重新选择外接显卡。")
+        raise ValueError(tr('The selected device is the boot GPU or drives an internal panel. Choose another external GPU.'))
     for selector in protected:
         for item in gpus:
             if all(item[k] == v for k, v in selector.items()):
                 if item["boot_vga"] or any(c["status"] == "connected" for c in item["connectors"]):
-                    raise ValueError("待隔离显卡正在驱动显示器；请先调整显示连接。")
+                    raise ValueError(tr('The GPU selected for isolation drives a monitor. Adjust display connections first.'))
     result = {"schema": 1, "enabled": profile.get("enabled", True),
               "target": profile["target"], "protected": protected,
               "stable_seconds": stable, "keep_path_awake": profile.get("keep_path_awake", True)}
@@ -113,7 +115,7 @@ def plan(profile, gpus):
     return {"profile": normalized, "files": render(normalized),
             "migrate": [p for p in LEGACY if Path(p).exists()],
             "requires_reboot": True,
-            "summary": "部署一个管理服务；保留 NVIDIA 官方休眠服务；保存现有配置并更新 initramfs，重启后生效。"}
+            "summary": tr("Deploy one management service, retain NVIDIA's official sleep services, back up existing configuration and update initramfs. Restart to apply.")}
 
 
 def save_backup(paths, directory):
@@ -121,7 +123,7 @@ def save_backup(paths, directory):
     for name in paths:
         path = Path(name)
         if path.is_symlink():
-            raise RuntimeError(f"配置路径是符号链接，需人工检查：{name}")
+            raise RuntimeError(tr('The configuration path is a symbolic link and requires manual inspection: {p0}').format(p0=name))
         if path.exists():
             stat = path.stat()
             manifest[name] = {"data": base64.b64encode(path.read_bytes()).decode(),
@@ -134,7 +136,7 @@ def save_backup(paths, directory):
 def restore_backup(directory):
     manifest = load_json(Path(directory) / "manifest.json")
     if not isinstance(manifest, dict):
-        raise RuntimeError("没有完整的部署备份。")
+        raise RuntimeError(tr('No complete deployment backup is available.'))
     for name, saved in manifest.items():
         path = Path(name)
         if saved is None:
@@ -148,12 +150,12 @@ def deploy(profile, gpus):
     details = plan(profile, gpus)
     params = command(["modinfo", "-p", "nvidia"]).stdout
     if "NVreg_UseKernelSuspendNotifiers:" not in params or "MIT" not in command(["modinfo", "-F", "license", "nvidia"]).stdout:
-        raise RuntimeError("需要支持内核休眠通知器的 NVIDIA 开源驱动；请先安装发行版驱动。")
+        raise RuntimeError(tr("NVIDIA open kernel modules with kernel suspend notifier support are required. Install your distribution's driver first."))
     if not Path("/usr/sbin/update-initramfs").exists():
-        raise RuntimeError("首版部署支持使用 initramfs-tools 的 Ubuntu/Debian 系统。")
+        raise RuntimeError(tr('Deployment currently supports Ubuntu/Debian systems using initramfs-tools.'))
     legacy = command(["systemctl", "is-active", "egpu-nvidia-load.service"], check=False).stdout.strip()
     if legacy in {"active", "activating"}:
-        raise RuntimeError("旧显卡加载服务正在工作，请稍后再迁移。")
+        raise RuntimeError(tr('The legacy GPU loading service is busy. Wait before migrating.'))
     directory = STATE / "backups" / f"{time.time_ns()}"
     directory.mkdir(parents=True, mode=0o700)
     paths = [*LEGACY, *details["files"], str(CONFIG)]
@@ -178,18 +180,18 @@ def deploy(profile, gpus):
         command(["udevadm", "control", "--reload-rules"], check=False)
         recovery = command(["update-initramfs", "-u", "-k", "all"], timeout=600, check=False)
         if recovery.returncode:
-            raise RuntimeError("部署失败，配置已恢复，但 initramfs 重建失败。请检查 /boot 空间并执行 sudo update-initramfs -u -k all。")
+            raise RuntimeError(tr('Deployment failed and configuration was restored, but rebuilding initramfs failed. Check /boot space and run sudo update-initramfs -u -k all.'))
         if previous_latest:
             atomic_write(STATE / "latest-backup.json", json.dumps(previous_latest), 0o600)
         raise
-    return "部署完成，现有配置已备份。请保存工作并重启，以启用统一管理服务。"
+    return tr('Deployment complete; existing configuration backed up. Save your work and restart to enable unified management.')
 
 
 def rollback():
     latest = load_json(STATE / "latest-backup.json", {})
     directory = Path(latest.get("path", "/nonexistent"))
     if directory.parent != STATE / "backups" or not directory.is_dir():
-        raise RuntimeError("没有可以回滚的管理器部署。")
+        raise RuntimeError(tr('No manager deployment is available to roll back.'))
     restore_backup(directory)
     command(["systemctl", "daemon-reload"])
     command(["udevadm", "control", "--reload-rules"])
@@ -199,4 +201,4 @@ def rollback():
         atomic_write(STATE / "latest-backup.json", json.dumps(previous), 0o600)
     else:
         (STATE / "latest-backup.json").unlink(missing_ok=True)
-    return "已恢复部署前的配置。请重启。"
+    return tr('Pre-deployment configuration restored. Restart your computer.')

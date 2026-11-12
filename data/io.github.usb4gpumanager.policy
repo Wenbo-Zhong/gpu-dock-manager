@@ -6,22 +6,28 @@
   <action id="io.github.usb4gpumanager.manage">
     <description>Manage the external GPU connection</description>
     <description xml:lang="zh_CN">管理外接显卡连接</description>
+    <description xml:lang="zh_TW">管理外接顯示卡連線</description>
     <message>An active local session is required to manage the external GPU.</message>
     <message xml:lang="zh_CN">连接或安全移除外接显卡需要活动本地会话。</message>
+    <message xml:lang="zh_TW">連接或安全移除外接顯示卡需要作用中的本機工作階段。</message>
     <defaults><allow_any>no</allow_any><allow_inactive>no</allow_inactive><allow_active>yes</allow_active></defaults>
   </action>
   <action id="io.github.usb4gpumanager.manage-internal">
     <description>Switch internal GPU and audio drivers</description>
     <description xml:lang="zh_CN">切换内置显卡及音频驱动</description>
+    <description xml:lang="zh_TW">切換內建顯示卡及音訊驅動程式</description>
     <message>An active local session is required to switch the internal GPU drivers.</message>
     <message xml:lang="zh_CN">切换内置显卡及音频驱动需要活动本地会话。</message>
+    <message xml:lang="zh_TW">切換內建顯示卡及音訊驅動程式需要作用中的本機工作階段。</message>
     <defaults><allow_any>no</allow_any><allow_inactive>no</allow_inactive><allow_active>yes</allow_active></defaults>
   </action>
   <action id="io.github.usb4gpumanager.configure">
     <description>Deploy external GPU system configuration</description>
     <description xml:lang="zh_CN">部署外接显卡系统配置</description>
+    <description xml:lang="zh_TW">部署外接顯示卡系統設定</description>
     <message>Administrator authentication is required to deploy or restore GPU configuration.</message>
     <message xml:lang="zh_CN">部署或恢复显卡配置需要管理员授权。</message>
+    <message xml:lang="zh_TW">部署或還原顯示卡設定需要管理員授權。</message>
     <defaults><allow_any>no</allow_any><allow_inactive>no</allow_inactive><allow_active>auth_admin_keep</allow_active></defaults>
   </action>
 </policyconfig>

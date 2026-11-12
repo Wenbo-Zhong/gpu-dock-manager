@@ -15,7 +15,7 @@ Section: utils
 Priority: optional
 Depends: python3 (>= 3.10), python3-gi, gir1.2-gtk-4.0, libgtk-4-1 (>= 4.12), gir1.2-adw-1, libadwaita-1-0 (>= 1.4), systemd, dbus, polkitd, kmod
 Recommends: libnotify-bin
-Suggests: initramfs-tools
+Suggests: initramfs-tools, kscreen
 Description: Desktop and system service for USB4 external GPUs
  Manages display output and safe removal of external NVIDIA GPUs.
  Includes the optional Mutter patch, porting skill and update watcher.

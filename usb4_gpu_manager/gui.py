@@ -1,4 +1,6 @@
 """GTK4/libadwaita UI. The UI never writes sysfs or invokes privileged shells."""
+
+from .i18n import tr, select_language
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 import json
@@ -6,9 +8,12 @@ import os
 from pathlib import Path
 import sys
 
-# A removal utility must not keep GPU device files open for its own UI.
-# This small dashboard uses GTK's CPU renderer instead of enumerating Vulkan GPUs.
-os.environ.setdefault("GSK_RENDERER", "cairo")
+# Keep GTK/libadwaita's own labels on the same language/fallback as our catalogs.
+os.environ['LANGUAGE'] = select_language()
+
+# Prefer the internal AMD panel's Mesa OpenGL renderer; avoid Vulkan enumeration.
+from .rendering import configure_renderer
+configure_renderer()
 
 import gi
 gi.require_version("Gtk", "4.0")
@@ -16,7 +21,7 @@ gi.require_version("Adw", "1")
 from gi.repository import Adw, Gdk, Gio, GLib, GObject, Gtk
 
 if (Gtk.get_major_version(), Gtk.get_minor_version()) < (4, 12) or (Adw.get_major_version(), Adw.get_minor_version()) < (1, 4):
-    raise RuntimeError("USB4 GPU Manager requires GTK 4.12+ and libadwaita 1.4+.")
+    raise RuntimeError(tr('USB4 GPU Manager requires GTK 4.12+ and libadwaita 1.4+.'))
 
 from . import __version__
 from .client import Client
@@ -72,15 +77,15 @@ def operation_summary(message):
     for line in reversed(message.splitlines()):
         if line.startswith(("RuntimeError: ", "OSError: ", "PermissionError: ")):
             return line.split(": ", 1)[1]
-    return "操作失败，详情见事件记录。"
+    return tr('Operation failed. See Events for details.')
 
 
 def gpu_power_text(gpu):
     if not gpu or not (gpu.get("power_state") or gpu.get("runtime_status")):
-        return "未读取"
-    runtime = {"active": "运行中", "suspended": "已休眠", "suspending": "正在休眠",
-               "resuming": "正在唤醒"}.get(gpu.get("runtime_status"), "未知")
-    return f'{gpu.get("power_state") or "未知"} · {runtime}'
+        return tr('Not read')
+    runtime = {"active": tr('Running'), "suspended": tr('Suspended'), "suspending": tr('Suspending'),
+               "resuming": tr('Resuming')}.get(gpu.get("runtime_status"), tr('Unknown'))
+    return f"{gpu.get('power_state') or tr('Unknown')} · {runtime}"
 
 
 class GpuPanel(Gtk.Box):
@@ -91,7 +96,7 @@ class GpuPanel(Gtk.Box):
         category_label = label(category, "gpu-section")
         category_label.set_hexpand(True)
         heading.append(category_label)
-        self.badge = label("检测中", "status-pill")
+        self.badge = label(tr('Detecting'), "status-pill")
         heading.append(self.badge)
         self.append(heading)
         self.title = label(name, "gpu-title", True)
@@ -103,31 +108,33 @@ class GpuPanel(Gtk.Box):
         self.append(self.power)
         metrics = Gtk.Grid(column_spacing=8, row_spacing=8, column_homogeneous=True)
         self.metrics = {}
-        for index, (key, title) in enumerate((("vram", "显存占用"), ("temp", "核心温度"),
-                                               ("power", "显卡功耗"), ("link", link_label))):
+        for index, (key, title) in enumerate((("vram", tr('VRAM usage')), ("temp", tr('GPU temperature')),
+                                               ("power", tr('GPU power')), ("link", link_label))):
             box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
             box.add_css_class("metric-box")
-            box.append(label(title, "dim-label"))
+            box.append(label(title, "dim-label", True))
             number = label("—", "metric-number", True)
             self.metrics[key] = number
             box.append(number)
             metrics.attach(box, index % 2, index // 2, 1, 1)
         self.append(metrics)
 
-        self.append(label("显示器", "gpu-section"))
-        self.display = label("正在检测屏幕归属…", "dim-label", True)
+        self.append(label(tr('Monitors'), "gpu-section"))
+        self.display = label(tr('Detecting monitor ownership…'), "dim-label", True)
         self.append(self.display)
-        display_buttons = Gtk.Box(spacing=6)
-        self.disable = Gtk.Button(label="停用外屏", sensitive=False)
-        self.restore = Gtk.Button(label="恢复外屏", sensitive=False)
+        display_buttons = Gtk.FlowBox(selection_mode=Gtk.SelectionMode.NONE, min_children_per_line=1,
+                                      max_children_per_line=2, column_spacing=6, row_spacing=6)
+        self.disable = Gtk.Button(label=tr('Disable monitors'), sensitive=False)
+        self.restore = Gtk.Button(label=tr('Restore monitors'), sensitive=False)
         display_buttons.append(self.disable)
         display_buttons.append(self.restore)
         self.append(display_buttons)
 
-        self.append(label("驱动与设备", "gpu-section"))
+        self.append(label(tr('Drivers and device'), "gpu-section"))
         self.driver = label("", "dim-label", True)
         self.append(self.driver)
-        self.buttons = Gtk.Box(spacing=6)
+        self.buttons = Gtk.FlowBox(selection_mode=Gtk.SelectionMode.NONE, min_children_per_line=1,
+                                  max_children_per_line=3, column_spacing=6, row_spacing=6)
         self.append(self.buttons)
         self.blockers = label("", "dim-label", True)
         self.blockers.set_visible(False)
@@ -158,17 +165,17 @@ class GpuPanel(Gtk.Box):
     def update_display(self, desktop, gpu, ready, empty):
         monitors = desktop.get("monitors", [])
         if monitors:
-            summary = "、".join(m["connector"] for m in monitors)
-            summary += f' · {sum(m["active"] for m in monitors)} 正在输出 / {len(monitors)} 已接屏'
-            self.display.set_tooltip_text("、".join(m["name"] for m in monitors))
+            summary = ", ".join(m["connector"] for m in monitors)
+            summary += tr(' · {p0} active / {p1} connected').format(p0=sum((m['active'] for m in monitors)), p1=len(monitors))
+            self.display.set_tooltip_text(", ".join(m["name"] for m in monitors))
         else:
-            summary = "未接显示器" if gpu and gpu.get("external_display_state") == "disconnected" else empty
+            summary = tr('No monitor connected') if gpu and gpu.get("external_display_state") == "disconnected" else empty
             self.display.set_tooltip_text(None)
         self.display.set_text(summary)
         self.disable.set_sensitive(bool(ready and desktop.get("can_disable")))
         self.restore.set_sensitive(bool(ready and desktop.get("can_restore")))
-        self.disable.set_tooltip_text(desktop.get("reason") or "仅停用这张显卡的显示输出。")
-        self.restore.set_tooltip_text(desktop.get("restore_reason") or "恢复此前保存的显示布局。")
+        self.disable.set_tooltip_text(desktop.get("reason") or tr("Disable only this GPU's display outputs."))
+        self.restore.set_tooltip_text(desktop.get("restore_reason") or tr('Restore the saved display layout.'))
 
 
 class Window(Adw.ApplicationWindow):
@@ -196,11 +203,11 @@ class Window(Adw.ApplicationWindow):
 
         layout = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         header = Adw.HeaderBar()
-        header.set_title_widget(Adw.WindowTitle(title="USB4 GPU Manager", subtitle="内置与外置显卡 · 本地管理"))
-        refresh = Gtk.Button(icon_name="view-refresh-symbolic", tooltip_text="刷新状态")
+        header.set_title_widget(Adw.WindowTitle(title="USB4 GPU Manager", subtitle=tr('Internal and external GPUs · Local management')))
+        refresh = Gtk.Button(icon_name="view-refresh-symbolic", tooltip_text=tr('Refresh status'))
         refresh.connect("clicked", lambda *_: self.refresh())
         header.pack_end(refresh)
-        quit_button = Gtk.Button(icon_name="system-shutdown-symbolic", tooltip_text="退出程序")
+        quit_button = Gtk.Button(icon_name="system-shutdown-symbolic", tooltip_text=tr('Quit application'))
         quit_button.connect("clicked", lambda *_: self.get_application().request_quit())
         header.pack_end(quit_button)
         layout.append(header)
@@ -215,10 +222,10 @@ class Window(Adw.ApplicationWindow):
         nav.set_margin_end(10)
         self.stack = Gtk.Stack(transition_type=Gtk.StackTransitionType.CROSSFADE, hexpand=True, vexpand=True)
         self.page_names = ["overview", "devices", "deployment", "logs"]
-        for name, title, icon in [("overview", "状态总览", "view-grid-symbolic"),
-                                  ("devices", "设备与显示器", "video-display-symbolic"),
-                                  ("deployment", "部署与恢复", "preferences-system-symbolic"),
-                                  ("logs", "事件记录", "text-x-generic-symbolic")]:
+        for name, title, icon in [("overview", tr('Overview'), "view-grid-symbolic"),
+                                  ("devices", tr('Devices and monitors'), "video-display-symbolic"),
+                                  ("deployment", tr('Deployment and recovery'), "preferences-system-symbolic"),
+                                  ("logs", tr('Events'), "text-x-generic-symbolic")]:
             item = Gtk.Box(spacing=10)
             item.add_css_class("nav-item")
             item.append(Gtk.Image(icon_name=icon))
@@ -228,7 +235,7 @@ class Window(Adw.ApplicationWindow):
         sidebar.append(nav)
         spacer = Gtk.Box(vexpand=True)
         sidebar.append(spacer)
-        foot = label(f"v{__version__} · 本地运行", "dim-label")
+        foot = label(tr('v{p0} · Local management').format(p0=__version__), "dim-label")
         foot.set_margin_start(22)
         foot.set_margin_bottom(22)
         sidebar.append(foot)
@@ -268,29 +275,29 @@ class Window(Adw.ApplicationWindow):
         return outer
 
     def build_overview(self):
-        page = self.page("overview", "显卡状态", "连接、显示、计算与睡眠恢复，一处查看。")
-        self.banner = Adw.Banner(title="正在读取本机状态…", revealed=True)
+        page = self.page("overview", tr('GPU status'), tr('Connections, displays, compute and resume recovery in one place.'))
+        self.banner = Adw.Banner(title=tr('Reading local status…'), revealed=True)
         page.append(self.banner)
         panels = Gtk.Box(spacing=14, homogeneous=True)
         narrow = Adw.Breakpoint.new(Adw.BreakpointCondition.parse("max-width: 900px"))
         narrow.add_setter(panels, "orientation", GObject.Value(Gtk.Orientation, Gtk.Orientation.VERTICAL))
         self.add_breakpoint(narrow)
-        self.internal_panel = GpuPanel("内置显卡", "RTX 4070", "内置 PCIe")
-        self.external_panel = GpuPanel("外置显卡", "外置 NVIDIA 显卡", "USB4 接收速率")
+        self.internal_panel = GpuPanel(tr('Internal GPU'), "RTX 4070", tr('Internal PCIe'))
+        self.external_panel = GpuPanel(tr('External GPU'), tr('External NVIDIA GPU'), tr('USB4 receive speed'))
         for panel in (self.internal_panel, self.external_panel):
             panels.append(panel)
         page.append(panels)
 
-        self.internal_attach = self.internal_panel.add_button("加载",
+        self.internal_attach = self.internal_panel.add_button(tr('Load'),
             lambda: self.confirm_internal_switch("internal-attach", self.internal_pci()), primary=True)
-        self.internal_detach = self.internal_panel.add_button("卸载",
+        self.internal_detach = self.internal_panel.add_button(tr('Unload'),
             lambda: self.confirm_internal_switch("internal-detach", self.internal_pci()))
-        self.internal_inspect = self.internal_panel.add_button("检查占用",
+        self.internal_inspect = self.internal_panel.add_button(tr('Inspect holders'),
             lambda: self.confirm_internal_switch(None, self.internal_pci()))
-        self.attach_button = self.external_panel.add_button("重新连接", lambda: self.submit("attach"), primary=True)
-        self.detach_button = self.external_panel.add_button("安全移除", lambda: self.confirm_detach(False))
-        self.queue_button = self.external_panel.add_button("注销后移除", lambda: self.confirm_detach(True))
-        self.cancel_button = Gtk.Button(label="取消预约", visible=False, halign=Gtk.Align.START)
+        self.attach_button = self.external_panel.add_button(tr('Reconnect'), lambda: self.submit("attach"), primary=True)
+        self.detach_button = self.external_panel.add_button(tr('Safely remove'), lambda: self.confirm_detach(False))
+        self.queue_button = self.external_panel.add_button(tr('Remove after logout'), lambda: self.confirm_detach(True))
+        self.cancel_button = Gtk.Button(label=tr('Cancel request'), visible=False, halign=Gtk.Align.START)
         self.cancel_button.connect("clicked", lambda *_: self.submit("cancel-detach"))
         self.external_panel.append(self.cancel_button)
 
@@ -302,60 +309,60 @@ class Window(Adw.ApplicationWindow):
         self.operation_label = label("", "gpu-notice", True)
         self.operation_label.set_visible(False)
         page.append(self.operation_label)
-        self.health = Adw.PreferencesGroup(title="运行状态")
+        self.health = Adw.PreferencesGroup(title=tr('Runtime status'))
         page.append(self.health)
 
     def internal_pci(self):
         return (self.data.get("internal_gpu") or {}).get("pci")
 
     def build_devices(self):
-        page = self.page("devices", "设备与显示器", "按 PCI 归属识别显卡和显示器，连接状态与启用状态分别展示。")
+        page = self.page("devices", tr('Devices and monitors'), tr('Identify GPUs and monitors by PCI ownership; show connection and enable states separately.'))
         self.device_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=20)
         page.append(self.device_box)
 
     def build_deployment(self):
-        page = self.page("deployment", "部署与恢复", "重装 Linux 后重新选择设备并部署；已有配置先备份，所有变更可预览。")
+        page = self.page("deployment", tr('Deployment and recovery'), tr('After reinstalling Linux, select devices and deploy again. Existing configuration is backed up, and all changes can be previewed.'))
         self.deployment_banner = Adw.Banner(title="", revealed=True)
         page.append(self.deployment_banner)
-        group = Adw.PreferencesGroup(title="设备策略")
-        target_row = row("目标外接显卡", "首版支持 NVIDIA；不会隔离所选目标卡。")
-        self.target_select = Gtk.DropDown(model=Gtk.StringList.new(["尚未检测到设备"]), valign=Gtk.Align.CENTER)
+        group = Adw.PreferencesGroup(title=tr('Device policy'))
+        target_row = row(tr('Target external GPU'), tr('NVIDIA supported initially; the selected target will not be isolated.'))
+        self.target_select = Gtk.DropDown(model=Gtk.StringList.new([tr('No device detected yet')]), valign=Gtk.Align.CENTER)
         self.target_select.set_size_request(270, -1)
         target_row.add_suffix(self.target_select)
         group.add(target_row)
         page.append(group)
-        self.protection_group = Adw.PreferencesGroup(title="内置 NVIDIA 显卡隔离", description="可选。当前使用 VFIO 的设备默认勾选；正在驱动显示器的设备会被拒绝隔离。")
+        self.protection_group = Adw.PreferencesGroup(title=tr('Internal NVIDIA GPU isolation'), description=tr('Optional. Devices using VFIO are selected by default. GPUs driving monitors cannot be isolated.'))
         page.append(self.protection_group)
-        notes = Adw.PreferencesGroup(title="部署内容")
-        for title, subtitle in [("一个自定义管理服务", "统一处理设备检测、延迟加载、唤醒恢复和事件记录。"),
-                                ("保留显示输出与 CUDA", "启用 NVIDIA 内核休眠通知器，不按“未接屏”强制卸载驱动。"),
-                                ("备份并迁移现有配置", "预览将替换的文件；更新 initramfs 后需要重启。")]:
+        notes = Adw.PreferencesGroup(title=tr('Deployment contents'))
+        for title, subtitle in [(tr('One custom management service'), tr('Manage device detection, delayed loading, resume recovery and events in one place.')),
+                                (tr('Keep display outputs and CUDA'), tr('Enable NVIDIA kernel suspend notifiers; do not unload solely because no monitor is connected.')),
+                                (tr('Back up and migrate existing configuration'), tr('Preview files to be replaced. A restart is required after updating initramfs.'))]:
             notes.add(row(title, subtitle))
         page.append(notes)
         actions = Gtk.Box(spacing=10)
-        self.deploy_button = Gtk.Button(label="预览部署变更")
+        self.deploy_button = Gtk.Button(label=tr('Preview deployment changes'))
         self.deploy_button.add_css_class("suggested-action")
         self.deploy_button.connect("clicked", lambda *_: self.preview_deployment())
-        self.rollback_button = Gtk.Button(label="恢复部署前配置")
+        self.rollback_button = Gtk.Button(label=tr('Restore previous configuration'))
         self.rollback_button.connect("clicked", lambda *_: self.confirm_rollback())
         actions.append(self.deploy_button)
         actions.append(self.rollback_button)
         page.append(actions)
         help_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
-        help_box.append(label("首次安装后台组件", "heading"))
-        help_box.append(label("若尚未安装管理服务，在源码目录执行以下命令。安装完成后可在本页部署设备策略。", "dim-label", True))
+        help_box.append(label(tr('Install background components'), "heading"))
+        help_box.append(label(tr('If the management service is not installed, run this command from the source directory. You can deploy device policies here after installation.'), "dim-label", True))
         source = Path(__file__).resolve().parent.parent
         self.install_command = "sudo bash " + str(source / "install.sh") if (source / "install.sh").exists() else "sudo bash ./install.sh"
         help_box.append(label(self.install_command, "monospace", True))
-        copy = Gtk.Button(label="复制安装命令", halign=Gtk.Align.START)
+        copy = Gtk.Button(label=tr('Copy install command'), halign=Gtk.Align.START)
         copy.connect("clicked", lambda *_: self.copy_text(self.install_command))
         help_box.append(copy)
         page.append(help_box)
 
     def build_logs(self):
-        page = self.page("logs", "事件记录", "管理服务的设备、部署和睡眠事件。导出状态不包含进程命令行或环境变量。")
+        page = self.page("logs", tr('Events'), tr('Device, deployment and sleep events from the management service. Exported status excludes process command lines and environment variables.'))
         controls = Gtk.Box(spacing=10)
-        copy = Gtk.Button(label="复制诊断状态", icon_name="edit-copy-symbolic")
+        copy = Gtk.Button(label=tr('Copy diagnostic status'), icon_name="edit-copy-symbolic")
         copy.connect("clicked", lambda *_: self.copy_text(json.dumps(self.data, ensure_ascii=False, indent=2)))
         controls.append(copy)
         page.append(controls)
@@ -382,7 +389,7 @@ class Window(Adw.ApplicationWindow):
 
     def refresh_error(self, error):
         self.refreshing = False
-        self.banner.set_title("读取状态失败：" + operation_summary(error))
+        self.banner.set_title(tr('Failed to read status: ') + operation_summary(error))
         self.banner.set_revealed(True)
 
     def update_gpu_panels(self, data, gpu, metric, removed, busy):
@@ -391,18 +398,18 @@ class Window(Adw.ApplicationWindow):
         state = transport.get("state")
         previous = gpu or data.get("last_known_target") or {}
         panel = self.external_panel
-        panel.title.set_text(metric.get("name") or previous.get("name") or "外置 NVIDIA 显卡")
-        panel.identity.set_text(f'{previous.get("pci", "PCI 未识别")} · {gpu["driver"] if gpu else "驱动未绑定"}')
-        panel.power.set_text("PCI 电源 · " + gpu_power_text(gpu))
-        badge = ("异常断开" if transport.get("driver_cleanup_pending") else "驱动异常" if data.get("blocked_io")
-                 else "状态过期" if data.get("status_stale") else "已移除" if state == "detached"
-                 else "已连接" if gpu and gpu["driver"] == "nvidia" else "等待驱动" if gpu else "未连接")
+        panel.title.set_text(metric.get("name") or previous.get("name") or tr('External NVIDIA GPU'))
+        panel.identity.set_text(f"{previous.get('pci', tr('PCI not identified'))} · {(gpu['driver'] if gpu else tr('Driver unbound'))}")
+        panel.power.set_text(tr('PCI power · ') + gpu_power_text(gpu))
+        badge = (tr('Unexpected disconnect') if transport.get("driver_cleanup_pending") else tr('Driver error') if data.get("blocked_io")
+                 else tr('Status stale') if data.get("status_stale") else tr('Removed') if state == "detached"
+                 else tr('Connected') if gpu and gpu["driver"] == "nvidia" else tr('Waiting for driver') if gpu else tr('Disconnected'))
         panel.badge.set_text(badge)
         router = next((r for r in data.get("usb4", []) if not r["is_host"]), {})
         speed = router.get("rx_speed", "—")
         panel.update_metrics(metric, "—" if speed == "unknown" else speed)
         panel.update_display(data.get("desktop_displays", {}), gpu, ready,
-                             "外屏输出已关闭" if removed else "未发现可控制的外屏")
+                             tr('External output disabled') if removed else tr('No controllable external monitors'))
         deploy = data.get("deployment", {})
         can_attach = deploy.get("managed") or (data.get("internal_gpu") and previous
                                                and state in {"present", "detached"})
@@ -412,14 +419,14 @@ class Window(Adw.ApplicationWindow):
                                              and not gpu["boot_vga"] and data.get("other_internal_display_ready")))
         self.detach_button.set_visible(not removed)
         self.queue_button.set_visible(not removed)
-        attach_hint = ("配置已部署，请先重启。" if deploy.get("restart_required") else
-                       "扫描 PCIe 并加载驱动。" if can_attach else "请先接入外置显卡。")
+        attach_hint = (tr('Configuration deployed; restart first.') if deploy.get("restart_required") else
+                       tr('Scan PCIe and load the driver.') if can_attach else tr('Connect the external GPU first.'))
         self.attach_button.set_tooltip_text(attach_hint)
-        panel.driver.set_text(("已安全移除 · USB4 已断开" if state == "disconnected" else
-                               "已安全移除 · 可以拔下 USB4 线缆") if removed else attach_hint)
+        panel.driver.set_text((tr('Safely removed · USB4 disconnected') if state == "disconnected" else
+                               tr('Safely removed · You may unplug USB4')) if removed else attach_hint)
         reasons = list(data.get("detach", {}).get("blockers", [])) if gpu else []
         if gpu and not data.get("other_internal_display_ready"):
-            reasons.append("注销后移除需要另一张显卡驱动的内屏。")
+            reasons.append(tr('Removal after logout requires an internal panel driven by another GPU.'))
         panel.blockers.set_text("\n".join(reasons))
         panel.blockers.set_visible(bool(reasons))
 
@@ -431,22 +438,22 @@ class Window(Adw.ApplicationWindow):
         reason = internal.get("reason")
         can_switch = bool(ready and card and not reason)
         panel.title.set_text("GeForce RTX 4070 Laptop GPU")
-        panel.identity.set_text(f'{internal["pci"]} · {graphics or "驱动未知"}' if internal.get("pci") else "未检测到受支持的内置显卡")
-        panel.power.set_text("PCI 电源 · " + gpu_power_text(card))
-        panel.badge.set_text("已隔离" if drivers == (VFIO, VFIO) else "已加载" if drivers == HOST_DRIVERS
-                             else "部分加载" if graphics == "nvidia" else "等待驱动" if card else "未检测到")
+        panel.identity.set_text(f"{internal['pci']} · {graphics or tr('Unknown driver')}" if internal.get("pci") else tr('No supported internal GPU detected'))
+        panel.power.set_text(tr('PCI power · ') + gpu_power_text(card))
+        panel.badge.set_text(tr('Isolated') if drivers == (VFIO, VFIO) else tr('Loaded') if drivers == HOST_DRIVERS
+                             else tr('Partially loaded') if graphics == "nvidia" else tr('Waiting for driver') if card else tr('Not detected'))
         internal_metric = next((item for item in data.get("metrics", []) if card and item["pci"] == card["pci"]), {})
-        panel.update_metrics(internal_metric, "固定连接")
+        panel.update_metrics(internal_metric, tr('Fixed connection'))
         sleeping = bool(card and card.get("runtime_status") == "suspended")
         for key in ("vram", "temp", "power"):
             if sleeping:
-                panel.metrics[key].set_text("休眠中")
+                panel.metrics[key].set_text(tr('Sleeping'))
             panel.metrics[key].set_tooltip_text(None if internal_metric else
-                "显卡休眠时暂停采样；驱动已加载且显卡处于 D0 活跃状态时，每 10 秒读取指标。")
+                tr('Sampling pauses while the GPU sleeps. When the driver is loaded and the GPU is active in D0, metrics refresh every 10 seconds.'))
         panel.update_display(data.get("internal_desktop_displays", {}), card, can_switch,
-                             "加载驱动后可识别 HDMI 显示器")
-        panel.driver.set_text(f'HDMI 音频 · {audio}　 IOMMU 组 · {internal["iommu_group"]}'
-                              if audio else "加载或卸载显卡与 HDMI 音频驱动。")
+                             tr('Load the driver to detect HDMI monitors'))
+        panel.driver.set_text(tr('HDMI audio · {p0}   IOMMU group · {p1}').format(p0=audio, p1=internal['iommu_group'])
+                              if audio else tr('Load or unload the GPU and HDMI audio drivers.'))
         panel.blockers.set_text(reason or "")
         panel.blockers.set_visible(bool(reason))
         self.internal_attach.set_sensitive(can_switch and drivers != HOST_DRIVERS)
@@ -476,11 +483,11 @@ class Window(Adw.ApplicationWindow):
         stale = data.get("status_stale", False)
         self.banner.set_revealed(not connected or bool(data.get("last_error")) or stale or deploy.get("restart_required", False))
         if not connected:
-            banner_text = "管理服务未连接 · 当前为只读预览"
+            banner_text = tr('Management service disconnected · Read-only preview')
         elif stale:
-            banner_text = data.get("last_error") or (f'详细状态已过期（{data.get("status_age_seconds", 0):.0f} 秒未更新），显示独立的 USB4 连接状态。' if data.get("sample_available") else "正在获取设备详细状态；USB4 连接独立监测。")
+            banner_text = data.get("last_error") or (tr('Detailed status is stale ({p0:.0f} seconds since the last update). Showing independent USB4 connectivity.').format(p0=data.get('status_age_seconds', 0)) if data.get("sample_available") else tr('Fetching detailed device status; USB4 connectivity is monitored independently.'))
         elif deploy.get("restart_required"):
-            banner_text = "配置已部署，请保存工作并重启"
+            banner_text = tr('Configuration deployed; save your work and restart')
         else:
             banner_text = data.get("last_error", "")
         self.banner.set_title(operation_summary(banner_text))
@@ -490,15 +497,15 @@ class Window(Adw.ApplicationWindow):
         for old in getattr(self, "health_rows", []):
             self.health.remove(old)
         parameters = data.get("parameters", {})
-        connections = "已连接外屏" if gpu and gpu["external_display_state"] == "connected" else "未连接外屏" if gpu and gpu["external_display_state"] == "disconnected" else "连接状态未知"
+        connections = tr('External monitor connected') if gpu and gpu["external_display_state"] == "connected" else tr('No external monitor connected') if gpu and gpu["external_display_state"] == "disconnected" else tr('Connection state unknown')
         internal = [g for g in data.get("gpus", []) if g["driver"] == "vfio-pci"]
         resume = data.get("last_resume")
-        resume_text = {"ready": "恢复完成", "waiting": "等待 USB4 稳定", "absent": "系统已唤醒，未接显卡"}.get(resume["state"], "未知") if resume else "本次管理服务尚无唤醒事件"
-        self.health_rows = [row("NVIDIA 驱动", value=metric.get("driver_version", "未读取")),
-                            row("外接显示器", "按 eGPU 自身的 DRM 接口判断", connections),
-                            row("睡眠恢复机制", "保留显存与显示输出", "内核通知器已启用" if parameters.get("UseKernelSuspendNotifiers") == "1" else "待配置 / 未加载驱动"),
-                            row("内置独显隔离", value="、".join(g["name"] for g in internal) or "未隔离"),
-                            row("最近一次唤醒", value=resume_text)]
+        resume_text = {"ready": tr('Resume complete'), "waiting": tr('Waiting for USB4 to stabilize'), "absent": tr('System resumed; no GPU connected')}.get(resume["state"], tr('Unknown')) if resume else tr('No resume event recorded by this service yet')
+        self.health_rows = [row(tr('NVIDIA driver'), value=metric.get("driver_version", tr('Not read'))),
+                            row(tr('External monitors'), tr("Based on this eGPU's DRM connectors"), connections),
+                            row(tr('Suspend and resume'), tr('Preserve VRAM and display outputs'), tr('Kernel suspend notifiers enabled') if parameters.get("UseKernelSuspendNotifiers") == "1" else tr('Not configured / driver not loaded')),
+                            row(tr('Internal GPU isolation'), value=", ".join(g["name"] for g in internal) or tr('Not isolated')),
+                            row(tr('Last resume'), value=resume_text)]
         for item in self.health_rows:
             self.health.add(item)
         action = self.display_action if self.display_message else operation.get("action", "")
@@ -507,15 +514,15 @@ class Window(Adw.ApplicationWindow):
         self.cancel_button.set_visible(connected and operation.get("action") == "queue-detach" and operation.get("state") == "waiting")
         self.deploy_button.set_sensitive(connected and fresh and bool(self.form_gpus or data.get("gpus")) and not busy)
         self.rollback_button.set_sensitive(connected and deploy.get("rollback_available", False) and not busy)
-        self.deployment_banner.set_title("管理配置已部署 · 待重启" if deploy.get("restart_required") else "统一管理已启用" if deploy.get("managed") else "尚未迁移设备策略；现有系统配置保持运行")
+        self.deployment_banner.set_title(tr('Configuration deployed · Restart required') if deploy.get("restart_required") else tr('Unified management enabled') if deploy.get("managed") else tr('Device policy not migrated; existing system configuration remains active'))
         self.update_devices(data)
         self.update_form(data)
         events = data.get("events", [])
-        self.log_text.get_buffer().set_text("\n\n".join(datetime.fromtimestamp(e["time"]).strftime("%m-%d %H:%M:%S") + "  " + e["message"] for e in events) or "等待管理服务事件。安装前可使用 journalctl 查看现有服务日志。")
+        self.log_text.get_buffer().set_text("\n\n".join(datetime.fromtimestamp(e["time"]).strftime("%m-%d %H:%M:%S") + "  " + e["message"] for e in events) or tr('Waiting for management events. Before installation, use journalctl to inspect existing service logs.'))
         operation_key = (operation.get("state"), operation.get("message"))
         if operation_key != self.last_operation and operation.get("state") in {"done", "error"}:
             if removed and self.stack.get_visible_child_name() != "overview":
-                self.toast("显卡已安全移除")
+                self.toast(tr('GPU safely removed'))
             elif not removal_done and (self.stack.get_visible_child_name() != "overview"
                                        or operation.get("action") not in INTERNAL_OPERATIONS | EXTERNAL_OPERATIONS):
                 self.toast(operation_summary(operation.get("message", "")))
@@ -529,8 +536,13 @@ class Window(Adw.ApplicationWindow):
         return False
 
     def update_devices(self, data):
+        signature = json.dumps({key: data.get(key) for key in
+                               ("gpus", "desktop_displays", "internal_desktop_displays", "services", "usb4")}, sort_keys=True)
+        if signature == getattr(self, "device_signature", None):
+            return
+        self.device_signature = signature
         clear(self.device_box)
-        words = {"connected": "已连接", "disconnected": "未连接", "unknown": "未知"}
+        words = {"connected": tr('Connected'), "disconnected": tr('Disconnected'), "unknown": tr('Unknown')}
         desktop_monitors = {m["connector"]: m for m in data.get("desktop_displays", {}).get("monitors", [])}
         internal = data.get("internal_gpu") or {}
         for gpu in data.get("gpus", []):
@@ -540,25 +552,25 @@ class Window(Adw.ApplicationWindow):
                 desktop = data.get("internal_desktop_displays") or {}
                 gpu_monitors = {m["connector"]: m for m in desktop.get("monitors", [])}
             if gpu.get("power_state") or gpu.get("runtime_status"):
-                group.add(row("PCI 电源状态", "运行时电源管理", gpu_power_text(gpu)))
+                group.add(row(tr('PCI power state'), tr('Runtime power management'), gpu_power_text(gpu)))
             for c in gpu["connectors"]:
-                category = {"internal": "内屏", "external": "外接接口", "virtual": "虚拟接口"}[c["kind"]]
+                category = {"internal": tr('Internal panel'), "external": tr('External connector'), "virtual": tr('Virtual connector')}[c["kind"]]
                 desktop = gpu_monitors.get(c["name"])
-                enabled = (" · 桌面正在输出" if desktop["active"] else " · 桌面已停用") if desktop else (" · 内核已启用" if c["enabled"] == "enabled" else " · 内核未启用")
+                enabled = (tr(' · desktop output active') if desktop["active"] else tr(' · desktop output disabled')) if desktop else (tr(' · enabled in kernel') if c["enabled"] == "enabled" else tr(' · disabled in kernel'))
                 group.add(row(c["name"], category, words.get(c["status"], c["status"]) + enabled))
             if not gpu["connectors"]:
-                group.add(row("尚无 DRM 接口", "驱动未绑定时，不把接口缺失视为未接屏。"))
+                group.add(row(tr('No DRM connectors yet'), tr('Missing connectors do not mean no monitor is connected when the driver is unbound.')))
             self.device_box.append(group)
         group = Adw.PreferencesGroup(title="USB4 / Thunderbolt")
         for router in data.get("usb4", []):
             if not router["is_host"]:
                 group.add(row(router["name"], f'{router["vendor"]} · {router["id"]}', router["rx_speed"]))
         self.device_box.append(group)
-        services = Adw.PreferencesGroup(title="服务集成", description="一次性任务完成后 inactive 属于正常状态。")
+        services = Adw.PreferencesGroup(title=tr('Service integration'), description=tr('Inactive is normal after a one-shot task completes.'))
         for unit in data.get("services", []):
-            state = ("未安装" if unit.get("LoadState") == "not-found" else
-                     "运行中" if unit.get("ActiveState") == "active" else
-                     "失败" if unit.get("ActiveState") == "failed" else "等待事件 / 已完成")
+            state = (tr('Not installed') if unit.get("LoadState") == "not-found" else
+                     tr('Running') if unit.get("ActiveState") == "active" else
+                     tr('Failed') if unit.get("ActiveState") == "failed" else tr('Waiting for an event / completed'))
             services.add(row(unit["Id"], unit.get("UnitFileState", "") + " · " + unit.get("Result", ""), state))
         self.device_box.append(services)
 
@@ -569,7 +581,7 @@ class Window(Adw.ApplicationWindow):
         self.form_signature = signature
         self.form_gpus = [g for g in data.get("gpus", []) if g["vendor"] == "0x10de" and not g["boot_vga"] and g.get("external")]
         metric_names = {m["pci"]: m["name"] for m in data.get("metrics", [])}
-        self.target_select.set_model(Gtk.StringList.new([metric_names.get(g["pci"], g["name"]) + " · " + g["pci"] for g in self.form_gpus] or ["未发现 NVIDIA 设备"]))
+        self.target_select.set_model(Gtk.StringList.new([metric_names.get(g["pci"], g["name"]) + " · " + g["pci"] for g in self.form_gpus] or [tr('No NVIDIA device found')]))
         suggested = data.get("profile") or data.get("suggested_profile", {})
         selector = suggested.get("target", {})
         for i, gpu in enumerate(self.form_gpus):
@@ -590,7 +602,7 @@ class Window(Adw.ApplicationWindow):
     def profile_from_form(self):
         index = self.target_select.get_selected()
         if index >= len(self.form_gpus):
-            raise ValueError("请连接并选择目标外接显卡。")
+            raise ValueError(tr('Connect and select the target external GPU.'))
         gpu = self.form_gpus[index]
         protected = [{"vendor": g["vendor"], "device": g["device"]} for _, (g, check) in self.protected_checks if check.get_active()]
         return {"schema": 1, "enabled": True, "target": {"vendor": gpu["vendor"], "device": gpu["device"]},
@@ -611,13 +623,13 @@ class Window(Adw.ApplicationWindow):
         self.pool.submit(work)
 
     def show_plan(self, details):
-        dialog = Adw.MessageDialog.new(self, "部署这套设备策略？", details["summary"])
-        dialog.add_response("cancel", "取消")
-        dialog.add_response("deploy", "授权并部署")
+        dialog = Adw.MessageDialog.new(self, tr('Deploy this device policy?'), details["summary"])
+        dialog.add_response("cancel", tr('Cancel'))
+        dialog.add_response("deploy", tr('Authorize and deploy'))
         dialog.set_response_appearance("deploy", Adw.ResponseAppearance.SUGGESTED)
         text = "\n\n".join(path + "\n" + body for path, body in details["files"].items())
         if details["migrate"]:
-            text += "\n备份并迁移：\n" + "\n".join(details["migrate"])
+            text += tr('\nBack up and migrate:\n') + "\n".join(details["migrate"])
         view = Gtk.TextView(editable=False, cursor_visible=False, monospace=True, wrap_mode=Gtk.WrapMode.WORD_CHAR)
         view.get_buffer().set_text(text)
         scroll = Gtk.ScrolledWindow(min_content_height=270, max_content_height=360)
@@ -631,11 +643,13 @@ class Window(Adw.ApplicationWindow):
         gpu = self.data.get("target")
         if not gpu:
             return
-        text = ("保存工作并打开内屏。接在这张显卡上的外屏会停止输出，显示器线可以留在显卡上。管理器将预约移除并打开注销确认；请通过内屏重新登录，确认“可以拔线”后再拔线。180 秒内未释放 GPU 会自动取消。" if queued else
-                "管理器将再次检查显示器和进程占用，然后移除目标 GPU 及其音频功能。收到“可以拔线”提示后再拔 USB4 线。")
-        dialog = Adw.MessageDialog.new(self, "注销后安全移除？" if queued else "安全移除外接显卡？", text)
-        dialog.add_response("cancel", "取消")
-        dialog.add_response("confirm", "预约并打开注销确认" if queued else "检查并移除")
+        text = (tr("Save your work and enable the internal panel. This GPU's external outputs will stop; monitor cables may stay connected. The manager will queue removal and open logout confirmation. Sign in using the internal panel, and unplug only after confirmation. The request expires after 180 seconds if the GPU remains held.") if queued else
+                tr('The manager will recheck monitors and holders, then remove the GPU and its audio function. Unplug USB4 only after safe-removal confirmation.'))
+        if queued and 'KDE' in os.environ.get('XDG_CURRENT_DESKTOP', '').upper().split(':'):
+            text = (tr('Save your work and enable the internal panel. The manager will queue removal and open KDE logout confirmation. Wait at the login screen after logout; immediately signing back into KDE may reacquire the GPU. The existing GPU-ignore rule applies only to GNOME. KDE logout removal still needs hardware testing. The request expires after 180 seconds. Unplug only after the manager confirms safe removal.'))
+        dialog = Adw.MessageDialog.new(self, tr('Log out and safely remove?') if queued else tr('Safely remove the external GPU?'), text)
+        dialog.add_response("cancel", tr('Cancel'))
+        dialog.add_response("confirm", tr('Queue removal and open logout confirmation') if queued else tr('Check and remove'))
         dialog.set_response_appearance("confirm", Adw.ResponseAppearance.DESTRUCTIVE)
         def respond(_, answer):
             if answer == "confirm":
@@ -651,10 +665,10 @@ class Window(Adw.ApplicationWindow):
         pci = self.internal_pci() if internal else (target or {}).get("pci")
         if not pci:
             return
-        dialog = Adw.MessageDialog.new(self, "停用这张显卡的外屏？",
-            "请先保存工作并启用另一张显卡驱动的内屏。仅停用 eGPU 的外屏输出，显卡和计算任务保持连接。其余屏幕会临时横向排列，可用“恢复外屏”还原。停用后仍需单独检查显卡移除条件。")
-        dialog.add_response("cancel", "取消")
-        dialog.add_response("confirm", "停用外屏")
+        dialog = Adw.MessageDialog.new(self, tr("Disable this GPU's external monitors?"),
+            tr("Save your work and enable another GPU's internal panel. Only the target GPU's external outputs will stop; the GPU and compute tasks stay connected. The desktop may reposition other monitors. Use Restore monitors to recover the layout. Check removal conditions separately afterward."))
+        dialog.add_response("cancel", tr('Cancel'))
+        dialog.add_response("confirm", tr('Disable monitors'))
         dialog.set_response_appearance("confirm", Adw.ResponseAppearance.SUGGESTED)
         dialog.connect("response", lambda _, answer: self.submit(action, {"expected_pci": pci}) if answer == "confirm" else None)
         dialog.present()
@@ -664,11 +678,11 @@ class Window(Adw.ApplicationWindow):
         if not pci:
             return
         attach = action == "internal-attach"
-        title = ("加载内置 4070？" if attach else "卸载内置 4070？") if action else "内置 4070 占用"
-        dialog = Adw.MessageDialog.new(self, title, "正在读取当前驱动和进程占用…")
-        dialog.add_response("cancel", "取消" if action else "关闭")
+        title = (tr('Load the internal 4070?') if attach else tr('Unload the internal 4070?')) if action else tr('Internal 4070 holders')
+        dialog = Adw.MessageDialog.new(self, title, tr('Reading current drivers and holders…'))
+        dialog.add_response("cancel", tr('Cancel') if action else tr('Close'))
         if action:
-            dialog.add_response("confirm", "确认切换")
+            dialog.add_response("confirm", tr('Confirm switch'))
             dialog.set_response_enabled("confirm", False)
             dialog.set_response_appearance("confirm", Adw.ResponseAppearance.SUGGESTED if attach else Adw.ResponseAppearance.DESTRUCTIVE)
             dialog.connect("response", lambda _, answer: self.submit(action, {"expected_pci": pci}) if answer == "confirm" else None)
@@ -678,36 +692,35 @@ class Window(Adw.ApplicationWindow):
             if not dialog.get_visible():
                 return False
             if error:
-                dialog.set_body("无法检查 4070：" + error)
+                dialog.set_body(tr('Cannot inspect the 4070: ') + error)
                 return False
             graphics, audio = status["graphics_driver"], status["audio_driver"]
-            current = ("已加载" if (graphics, audio) == HOST_DRIVERS else "已卸载并隔离"
-                       if (graphics, audio) == (VFIO, VFIO) else "图形已加载，音频驱动不同"
-                       if graphics == "nvidia" else "部分绑定")
-            lines = [f"当前状态 · {current}", f"图形驱动 {graphics}　HDMI 音频 {audio}"]
+            current = (tr('Loaded') if (graphics, audio) == HOST_DRIVERS else tr('Unloaded and isolated')
+                       if (graphics, audio) == (VFIO, VFIO) else tr('Graphics loaded; audio driver differs')
+                       if graphics == "nvidia" else tr('Partially bound'))
+            lines = [tr('Current state · {p0}').format(p0=current), tr('Graphics driver {p0}   HDMI audio {p1}').format(p0=graphics, p1=audio)]
             occupied = status["holders"]
             blocker = internal_switch_blocker(status, action) if action else ""
             scoped = bool(action and graphics == ("nvidia" if attach else VFIO)
                           and audio != ("snd_hda_intel" if attach else VFIO) and "audio_holders" in status)
             blocking_pids = {p["pid"] for p in internal_switch_holders(status, action)["processes"]} if action else set()
             if scoped:
-                lines.extend(("", "本次仅切换 HDMI 音频驱动；检查音频和 VFIO 占用。"))
+                lines.extend(("", tr('This action switches only the HDMI audio driver; checking audio and VFIO holders.')))
             if action == "internal-detach" and any(releasable_internal_holder(p, action) for p in occupied["processes"]):
-                lines.extend(("", "卸载前自动暂停 nvidia-powerd，并按需短暂停止 WirePlumber（声音可能中断）。"
-                              "操作结束后恢复 WirePlumber；卸载失败或重新加载显卡时恢复 nvidia-powerd。"))
+                lines.extend(("", tr('Before unloading, pause nvidia-powerd and, if needed, briefly stop WirePlumber (audio may be interrupted). Restore WirePlumber after the operation. Restore nvidia-powerd if unloading fails or when the GPU is loaded again.')))
             if blocker:
                 lines.extend(("", blocker))
             if occupied["processes"]:
                 entries = []
                 for process in occupied["processes"]:
                     direct = process["direct_nodes"]
-                    kind = "本设备" if direct else "共享或其他 NVIDIA 节点"
+                    kind = tr('This device') if direct else tr('Shared or other NVIDIA nodes')
                     if scoped:
-                        kind += " · 需释放" if process["pid"] in blocking_pids else " · 本次无需释放"
+                        kind += tr(' · release required') if process["pid"] in blocking_pids else tr(' · no release needed for this action')
                     if releasable_internal_holder(process, action):
-                        kind += " · 自动释放"
-                    entries.append(f'{process["name"]}（PID {process["pid"]}）· {kind}\n'
-                                   + "、".join(direct or process["nodes"])
+                        kind += tr(' · released automatically')
+                    entries.append(f'{process["name"]} (PID {process["pid"]})· {kind}\n'
+                                   + ", ".join(direct or process["nodes"])
                                    + ("\n" + gpu_holder_hint(process) if not action and gpu_holder_hint(process) else ""))
                 processes = label("\n\n".join(entries), wrap=True)
                 scroll = Gtk.ScrolledWindow(hscrollbar_policy=Gtk.PolicyType.NEVER,
@@ -715,11 +728,11 @@ class Window(Adw.ApplicationWindow):
                 scroll.set_child(processes)
                 dialog.set_extra_child(scroll)
             elif occupied["complete"]:
-                lines.extend(("", "未发现占用进程。"))
+                lines.extend(("", tr('No holders found.')))
             if not occupied["complete"] and not blocker:
-                lines.extend(("", "进程扫描不完整。"))
+                lines.extend(("", tr('Holder scan is incomplete.')))
             if action and not blocker:
-                lines.extend(("", "保持 AMD 内屏启用。切换前会再次检查占用。"))
+                lines.extend(("", tr('Keep the AMD internal panel enabled. Holders will be checked again before switching.')))
                 dialog.set_response_enabled("confirm", True)
             dialog.set_body("\n".join(lines))
             return False
@@ -733,9 +746,9 @@ class Window(Adw.ApplicationWindow):
         return dialog
 
     def confirm_rollback(self):
-        dialog = Adw.MessageDialog.new(self, "恢复部署前的配置？", "恢复备份文件并重建 initramfs。完成后需要重启。")
-        dialog.add_response("cancel", "取消")
-        dialog.add_response("confirm", "授权并恢复")
+        dialog = Adw.MessageDialog.new(self, tr('Restore the pre-deployment configuration?'), tr('Restore backed-up files and rebuild initramfs. A restart is required.'))
+        dialog.add_response("cancel", tr('Cancel'))
+        dialog.add_response("confirm", tr('Authorize and restore'))
         dialog.set_response_appearance("confirm", Adw.ResponseAppearance.DESTRUCTIVE)
         dialog.connect("response", lambda _, answer: self.submit("rollback") if answer == "confirm" else None)
         dialog.present()
@@ -745,15 +758,15 @@ class Window(Adw.ApplicationWindow):
         display_action = action in {"disable-displays", "restore-displays", *INTERNAL_DISPLAY_ACTIONS}
         self.display_busy = display_action
         self.display_action = action if display_action else ""
-        self.display_message = "正在更改当前桌面的外屏输出…" if display_action else ""
+        self.display_message = tr("Changing this desktop's external outputs…") if display_action else ""
         if self.data:
             self.apply_status(self.data, completed=False)
-        self.show_operation(action, self.display_message or "正在提交后台服务…")
+        self.show_operation(action, self.display_message or tr('Submitting to the management service…'))
         def finished(message, failed=False):
             self.operation_pending = False
             self.display_busy = False
             if display_action:
-                self.display_message = ("外屏操作未完成：" if failed else "") + str(message)
+                self.display_message = (tr('Display operation failed: ') if failed else "") + str(message)
             if failed:
                 self.pending_logout = False
             self.toast(operation_summary(message))
@@ -783,14 +796,18 @@ class Window(Adw.ApplicationWindow):
     def request_logout(self):
         try:
             connection = Gio.bus_get_sync(Gio.BusType.SESSION, None)
+            if 'KDE' in os.environ.get('XDG_CURRENT_DESKTOP', '').upper().split(':'):
+                connection.call('org.kde.LogoutPrompt', '/LogoutPrompt', 'org.kde.LogoutPrompt',
+                                'promptLogout', None, None, Gio.DBusCallFlags.NONE, 5000, None, None)
+                return
             connection.call("org.gnome.SessionManager", "/org/gnome/SessionManager", "org.gnome.SessionManager",
                             "Logout", GLib.Variant("(u)", (0,)), None, Gio.DBusCallFlags.NONE, 5000, None, None)
         except GLib.Error:
-            self.toast("移除已预约。请使用桌面菜单手动注销；也可以取消预约。")
+            self.toast(tr('Removal queued. Log out using the desktop menu, or cancel the request.'))
 
     def copy_text(self, text):
         Gdk.Display.get_default().get_clipboard().set(text)
-        self.toast("已复制。")
+        self.toast(tr('Copied.'))
 
     def toast(self, message):
         self.toasts.add_toast(Adw.Toast.new(str(message)[:180]))
@@ -838,13 +855,13 @@ class Application(Adw.Application):
             if self.tray and self.tray.ready:
                 window.set_visible(False)
             else:
-                window.toast("当前桌面托盘不可用，窗口继续保留。")
+                window.toast(tr('The desktop tray is unavailable; keeping the window accessible.'))
 
     def request_quit(self):
         window = self.window
         if window and (window.operation_pending or window.data.get("operation", {}).get("state") in {"running", "waiting", "removing"}):
             window.present()
-            window.toast("请等待当前操作完成，或先取消预约，再退出。")
+            window.toast(tr('Wait for the current operation to finish, or cancel the queued request, before exiting.'))
             return
         self.quit()
 

@@ -8,19 +8,20 @@ import syslog
 if __package__ is None:
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from usb4_gpu_manager.i18n import tr
 from usb4_gpu_manager.system import read
 
 
 def selected_device(gpu, root=Path("/sys/bus/pci/devices")):
     if not re.fullmatch(r"[0-9a-f]{4}:[0-9a-f]{2}:[0-9a-f]{2}\.[0-7]", gpu.get("pci", "")):
-        raise ValueError("Invalid PCI address")
+        raise ValueError(tr('Invalid PCI address'))
     device = root / gpu["pci"]
     if read(device / "vendor") != gpu.get("vendor") or read(device / "device") != gpu.get("device"):
-        raise RuntimeError("GPU identity changed")
+        raise RuntimeError(tr('GPU identity changed'))
     if gpu["vendor"] != "0x10de" or read(device / "removable") != "removable":
-        raise RuntimeError("Target is not a removable NVIDIA GPU")
+        raise RuntimeError(tr('Target is not a removable NVIDIA GPU'))
     if not read(device / "class", "").startswith("0x03"):
-        raise RuntimeError("Target is not a display-class GPU")
+        raise RuntimeError(tr('Target is not a display-class GPU'))
     return device
 
 
@@ -58,7 +59,7 @@ def main():
         device = selected_device(value)
         if (device / "driver").exists():
             if (device / "driver").resolve().name != "nvidia":
-                raise RuntimeError("Target has another driver")
+                raise RuntimeError(tr('Target has another driver'))
         else:
             Path("/sys/bus/pci/drivers/nvidia/bind").write_text(value["pci"])
     elif action == "power":
@@ -69,7 +70,7 @@ def main():
                 control.write_text("on\n")
             path = path.parent
     else:
-        raise ValueError("Unsupported worker action")
+        raise ValueError(tr('Unsupported worker action'))
 
 
 if __name__ == "__main__":

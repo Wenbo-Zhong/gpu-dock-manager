@@ -1,0 +1,9 @@
+{
+  "tag": "v6.6.6",
+  "files": {
+    "src/backends/drm/drm_backend.cpp": "4ad046f4b854cb77d46b61db47d2e169046ecf7226f5bcb71724c53002c6cbd2",
+    "src/backends/drm/drm_gpu.cpp": "ab60956861163509664af7b70033873b3511055437230dd923c65e276ada34e2",
+    "src/wayland/drmlease_v1.cpp": "55926f3ef7fffc2c8b4aecb8e405738126c1574c14c4b0379bd84d23fc5770fc",
+    "src/core/drmdevice.cpp": "d932f781b113733939ef1ff955bcefff879838208d0280249b05ba2b69f114c8"
+  }
+}

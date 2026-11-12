@@ -37,7 +37,7 @@ DRM 查询、PCI 移除与绑定改为独立进程，超时不会无限等待无
 ```
 
 使用系统 Python/PyGObject，不使用缺少 GI 的 Conda Python。
-界面要求 GTK 4.12+ 与 libadwaita 1.4+；默认使用 CPU 渲染，避免管理器自己占用待移除的 GPU。
+界面要求 GTK 4.12+ 与 libadwaita 1.4+；检测到驱动内屏的 AMD/Intel 核显时，强制使用该核显的 Mesa OpenGL 渲染，并覆盖独显优先环境变量；无法唯一识别核显时使用 CPU 渲染。
 
 ## 安装与迁移
 
@@ -169,3 +169,13 @@ desktop-file-validate data/io.github.usb4gpumanager.App.desktop
 桌面支持 StatusNotifierItem 时，最小化或关闭窗口会将界面隐藏到托盘，标题栏的退出按钮用于彻底退出界面。托盘菜单提供显示、隐藏和退出；再次打开快捷方式会恢复已有窗口。托盘不可用时不隐藏到不可访问的后台；托盘宿主退出时会恢复窗口。退出界面不停止系统管理服务。正在执行设备操作或等待注销时需先完成或取消操作再退出界面。
 
 托盘通过会话 D-Bus 实现，不额外依赖 GTK3 AppIndicator。GNOME 需要启用支持 AppIndicator/StatusNotifierItem 的扩展，KDE 等桌面通常内置托盘宿主。用户界面保持普通用户权限；活动本地会话的固定 GPU 操作由 root 后台服务执行，非活动及远程会话默认拒绝。系统部署与恢复继续要求管理员授权。此策略适用于 GUI 和命令行客户端。
+
+## KDE Plasma 兼容性
+
+KDE 会话自动选择 KScreen 后端，需要 `kscreen-doctor`（Ubuntu 包名 `kscreen`）。支持按显卡读取外屏状态、停用和恢复布局；内置与外置卡分别保存 KDE 备份，不覆盖 GNOME 布局备份。停用前要求另一张卡的内屏已经启用，恢复前核对 EDID、连接及当前布局；暂不支持镜像布局。KScreen 可能记住会话中的显示更改。
+
+当前 KDE 6.6 Wayland 已通过托盘和内屏状态读取验证；实际外屏停用/恢复及 X11 尚待验证。KDE 注销使用自身的确认接口。原有注销后跳过 GPU 的 udev 标签仅适用于 Mutter，KDE 自动移除与重新登录组合尚未验证。停用显示输出不保证 KWin/Xwayland 释放 GPU，安全移除仍执行完整占用检查。详见 [KDE 适配记录](docs/kde-compatibility.md)。
+
+## 界面语言
+
+支持简体中文、繁体中文和英文，根据系统界面语言自动选择；没有对应翻译的语言回退英文。修改系统语言后请从托盘退出并重新打开程序。文案采用独立的标准 gettext PO 文件，欢迎提交其他语言翻译，见 [翻译贡献指南](docs/translations.md)。

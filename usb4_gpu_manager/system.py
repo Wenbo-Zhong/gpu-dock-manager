@@ -1,4 +1,6 @@
 """Small system helpers. Commands use argument arrays and a fixed PATH."""
+
+from .i18n import tr
 import json
 import os
 from pathlib import Path
@@ -13,7 +15,9 @@ _stalled_lock = threading.Lock()
 
 def gpu_holder_hint(process):
     if process.get("name", "").lower() == "ptyxis":
-        return "请先保存终端中的工作，关闭所有 Ptyxis 终端窗口后重试。"
+        return tr('Save your terminal work, then close all Ptyxis terminal windows and try again.')
+    if process.get("name") == "kwin_wayland":
+        return tr('KWin still holds the GPU. Disabling monitors may not release it; automatic reclamation is not integrated yet.')
     return ""
 
 
@@ -33,7 +37,7 @@ def command(args, timeout=15, check=True, guard_key=None):
         old = _stalled.get(key)
         if old is not None:
             if old.poll() is None:
-                raise subprocess.TimeoutExpired(args, timeout, stderr="上次驱动调用仍未退出；已暂停重复请求。")
+                raise subprocess.TimeoutExpired(args, timeout, stderr=tr('The previous driver call has not exited; duplicate requests are paused.'))
             del _stalled[key]
     process = subprocess.Popen(args, text=True, stdout=subprocess.PIPE,
                                stderr=subprocess.PIPE, start_new_session=True,
