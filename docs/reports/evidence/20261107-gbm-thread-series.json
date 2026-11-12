@@ -1,0 +1,136 @@
+{
+  "date": "2026-11-07",
+  "tests": [
+    {
+      "source_report": "gbm-series-20261107-003640-872df2e1.json",
+      "source_sha256": "60196c20a3702f530690780f9fe758f1d39baa718d35a8c5e9f9d036f66a8251",
+      "fresh_thread": false,
+      "exit_code": 0,
+      "cycles": [
+        {
+          "index": 1,
+          "initial_fds": 0,
+          "remaining_after_worker_return": 14,
+          "remaining_node_counts": {
+            "/dev/nvidiactl": 4,
+            "/dev/nvidia0": 7,
+            "/dev/dri/renderD129": 2,
+            "/dev/nvidia-modeset": 1
+          },
+          "cleanup": {
+            "unbind": true,
+            "destroy_context": true,
+            "terminate": true,
+            "destroy_gbm": true,
+            "release_thread": true
+          },
+          "error": null
+        },
+        {
+          "index": 2,
+          "initial_fds": 14,
+          "remaining_after_worker_return": 14,
+          "remaining_node_counts": {
+            "/dev/nvidiactl": 4,
+            "/dev/nvidia0": 7,
+            "/dev/dri/renderD129": 2,
+            "/dev/nvidia-modeset": 1
+          },
+          "cleanup": {
+            "unbind": true,
+            "destroy_context": true,
+            "terminate": true,
+            "destroy_gbm": true,
+            "release_thread": true
+          },
+          "error": null
+        },
+        {
+          "index": 3,
+          "initial_fds": 14,
+          "remaining_after_worker_return": 14,
+          "remaining_node_counts": {
+            "/dev/nvidiactl": 4,
+            "/dev/nvidia0": 7,
+            "/dev/dri/renderD129": 2,
+            "/dev/nvidia-modeset": 1
+          },
+          "cleanup": {
+            "unbind": true,
+            "destroy_context": true,
+            "terminate": true,
+            "destroy_gbm": true,
+            "release_thread": true
+          },
+          "error": null
+        }
+      ]
+    },
+    {
+      "source_report": "gbm-series-20261107-003640-b86a1dfb.json",
+      "source_sha256": "d97beed2219e9a41c9ec2b30be943de95a8403f10e92a50e4793113b8f505f27",
+      "fresh_thread": true,
+      "exit_code": 0,
+      "cycles": [
+        {
+          "index": 1,
+          "initial_fds": 0,
+          "remaining_after_worker_return": 14,
+          "remaining_node_counts": {
+            "/dev/nvidiactl": 4,
+            "/dev/nvidia0": 7,
+            "/dev/dri/renderD129": 2,
+            "/dev/nvidia-modeset": 1
+          },
+          "cleanup": {
+            "unbind": true,
+            "destroy_context": true,
+            "terminate": true,
+            "destroy_gbm": true,
+            "release_thread": true
+          },
+          "error": null
+        },
+        {
+          "index": 2,
+          "initial_fds": 14,
+          "remaining_after_worker_return": 14,
+          "remaining_node_counts": {
+            "/dev/nvidiactl": 4,
+            "/dev/nvidia0": 7,
+            "/dev/dri/renderD129": 2,
+            "/dev/nvidia-modeset": 1
+          },
+          "cleanup": {
+            "unbind": true,
+            "destroy_context": true,
+            "terminate": true,
+            "destroy_gbm": true,
+            "release_thread": true
+          },
+          "error": null
+        },
+        {
+          "index": 3,
+          "initial_fds": 14,
+          "remaining_after_worker_return": 14,
+          "remaining_node_counts": {
+            "/dev/nvidiactl": 4,
+            "/dev/nvidia0": 7,
+            "/dev/dri/renderD129": 2,
+            "/dev/nvidia-modeset": 1
+          },
+          "cleanup": {
+            "unbind": true,
+            "destroy_context": true,
+            "terminate": true,
+            "destroy_gbm": true,
+            "release_thread": true
+          },
+          "error": null
+        }
+      ]
+    }
+  ],
+  "note": "Two independent processes ran concurrently; every cycle and FD snapshot is process-local."
+}

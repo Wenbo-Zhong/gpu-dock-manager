@@ -1,0 +1,30 @@
+[Unit]
+Description=USB4 GPU Manager
+After=dbus.service systemd-udev-trigger.service
+Wants=dbus.service
+
+[Service]
+Type=dbus
+BusName=io.github.usb4gpumanager.Manager
+ExecStart=/usr/bin/python3 -I /usr/lib/usb4-gpu-manager/daemon_entry.py
+ExecStopPost=/usr/bin/python3 -I /usr/lib/usb4-gpu-manager/daemon_entry.py cleanup
+Restart=on-failure
+RestartSec=4
+TimeoutStopSec=30
+ConfigurationDirectory=usb4-gpu-manager
+StateDirectory=usb4-gpu-manager
+StateDirectoryMode=0700
+RuntimeDirectory=usb4-gpu-manager
+RuntimeDirectoryMode=0700
+ProtectSystem=full
+ProtectHome=true
+PrivateTmp=true
+NoNewPrivileges=true
+RestrictAddressFamilies=AF_UNIX AF_NETLINK
+ReadWritePaths=/etc/usb4-gpu-manager /etc/modprobe.d /etc/udev/rules.d /etc/systemd/system /boot /sys /run/udev
+UMask=0077
+SyslogIdentifier=usb4-gpu-manager
+Environment=PYTHONNOUSERSITE=1
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,278 @@
+{
+  "date": "2026-11-07",
+  "tests": [
+    {
+      "source_report": "gbm-context-20261107-003216-9378139c.json",
+      "source_sha256": "2c822417d0a48428a0cde812b6ff60fd5c92f0c79989ffcdad6ada70686de495",
+      "with_context": false,
+      "exit_code": 0,
+      "cleanup": {
+        "terminate": true,
+        "destroy_gbm": true,
+        "release_thread": true
+      },
+      "renderer": null,
+      "samples": [
+        {
+          "stage": "before-library-load",
+          "total_fds": 0,
+          "node_counts": {}
+        },
+        {
+          "stage": "after-library-load",
+          "total_fds": 0,
+          "node_counts": {}
+        },
+        {
+          "stage": "after-card-open",
+          "total_fds": 1,
+          "node_counts": {
+            "/dev/dri/card0": 1
+          }
+        },
+        {
+          "stage": "after-gbm-create",
+          "total_fds": 1,
+          "node_counts": {
+            "/dev/dri/card0": 1
+          }
+        },
+        {
+          "stage": "after-get-platform-display",
+          "total_fds": 7,
+          "node_counts": {
+            "/dev/dri/card0": 1,
+            "/dev/nvidiactl": 2,
+            "/dev/nvidia0": 3,
+            "/dev/dri/renderD129": 1
+          }
+        },
+        {
+          "stage": "after-initialize",
+          "total_fds": 9,
+          "node_counts": {
+            "/dev/dri/card0": 1,
+            "/dev/nvidiactl": 2,
+            "/dev/nvidia0": 5,
+            "/dev/dri/renderD129": 1
+          }
+        },
+        {
+          "stage": "after-terminate",
+          "total_fds": 9,
+          "node_counts": {
+            "/dev/dri/card0": 1,
+            "/dev/nvidiactl": 2,
+            "/dev/nvidia0": 5,
+            "/dev/dri/renderD129": 1
+          }
+        },
+        {
+          "stage": "after-gbm-destroy",
+          "total_fds": 9,
+          "node_counts": {
+            "/dev/dri/card0": 1,
+            "/dev/nvidiactl": 2,
+            "/dev/nvidia0": 5,
+            "/dev/dri/renderD129": 1
+          }
+        },
+        {
+          "stage": "after-card-close",
+          "total_fds": 8,
+          "node_counts": {
+            "/dev/nvidiactl": 2,
+            "/dev/nvidia0": 5,
+            "/dev/dri/renderD129": 1
+          }
+        },
+        {
+          "stage": "after-release-thread",
+          "total_fds": 8,
+          "node_counts": {
+            "/dev/nvidiactl": 2,
+            "/dev/nvidia0": 5,
+            "/dev/dri/renderD129": 1
+          }
+        },
+        {
+          "stage": "one-second-after-cleanup",
+          "total_fds": 8,
+          "node_counts": {
+            "/dev/nvidiactl": 2,
+            "/dev/nvidia0": 5,
+            "/dev/dri/renderD129": 1
+          }
+        }
+      ]
+    },
+    {
+      "source_report": "gbm-context-20261107-003217-6c6b8e60.json",
+      "source_sha256": "7e5224a0eda32b17de61704896aa5a74c5d1464d90fba3d690c5a8d3d27dcb2e",
+      "with_context": true,
+      "exit_code": 0,
+      "cleanup": {
+        "unbind": true,
+        "destroy_context": true,
+        "terminate": true,
+        "destroy_gbm": true,
+        "release_thread": true
+      },
+      "renderer": "NVIDIA RTX PRO 5000 72GB Blackwell/PCIe/SSE2",
+      "samples": [
+        {
+          "stage": "before-library-load",
+          "total_fds": 0,
+          "node_counts": {}
+        },
+        {
+          "stage": "after-library-load",
+          "total_fds": 0,
+          "node_counts": {}
+        },
+        {
+          "stage": "after-card-open",
+          "total_fds": 1,
+          "node_counts": {
+            "/dev/dri/card0": 1
+          }
+        },
+        {
+          "stage": "after-gbm-create",
+          "total_fds": 1,
+          "node_counts": {
+            "/dev/dri/card0": 1
+          }
+        },
+        {
+          "stage": "after-get-platform-display",
+          "total_fds": 7,
+          "node_counts": {
+            "/dev/dri/card0": 1,
+            "/dev/nvidiactl": 2,
+            "/dev/nvidia0": 3,
+            "/dev/dri/renderD129": 1
+          }
+        },
+        {
+          "stage": "after-initialize",
+          "total_fds": 9,
+          "node_counts": {
+            "/dev/dri/card0": 1,
+            "/dev/nvidiactl": 2,
+            "/dev/nvidia0": 5,
+            "/dev/dri/renderD129": 1
+          }
+        },
+        {
+          "stage": "after-create-context",
+          "total_fds": 15,
+          "node_counts": {
+            "/dev/dri/card0": 1,
+            "/dev/nvidiactl": 4,
+            "/dev/nvidia0": 7,
+            "/dev/dri/renderD129": 2,
+            "/dev/nvidia-modeset": 1
+          }
+        },
+        {
+          "stage": "after-make-current",
+          "total_fds": 21,
+          "node_counts": {
+            "/dev/dri/card0": 1,
+            "/dev/nvidiactl": 4,
+            "/dev/nvidia0": 12,
+            "/dev/dri/renderD129": 2,
+            "/dev/nvidia-modeset": 2
+          }
+        },
+        {
+          "stage": "after-renderer-query",
+          "total_fds": 21,
+          "node_counts": {
+            "/dev/dri/card0": 1,
+            "/dev/nvidiactl": 4,
+            "/dev/nvidia0": 12,
+            "/dev/dri/renderD129": 2,
+            "/dev/nvidia-modeset": 2
+          }
+        },
+        {
+          "stage": "after-unbind",
+          "total_fds": 21,
+          "node_counts": {
+            "/dev/dri/card0": 1,
+            "/dev/nvidiactl": 4,
+            "/dev/nvidia0": 12,
+            "/dev/dri/renderD129": 2,
+            "/dev/nvidia-modeset": 2
+          }
+        },
+        {
+          "stage": "after-destroy-context",
+          "total_fds": 21,
+          "node_counts": {
+            "/dev/dri/card0": 1,
+            "/dev/nvidiactl": 4,
+            "/dev/nvidia0": 12,
+            "/dev/dri/renderD129": 2,
+            "/dev/nvidia-modeset": 2
+          }
+        },
+        {
+          "stage": "after-terminate",
+          "total_fds": 21,
+          "node_counts": {
+            "/dev/dri/card0": 1,
+            "/dev/nvidiactl": 4,
+            "/dev/nvidia0": 12,
+            "/dev/dri/renderD129": 2,
+            "/dev/nvidia-modeset": 2
+          }
+        },
+        {
+          "stage": "after-gbm-destroy",
+          "total_fds": 21,
+          "node_counts": {
+            "/dev/dri/card0": 1,
+            "/dev/nvidiactl": 4,
+            "/dev/nvidia0": 12,
+            "/dev/dri/renderD129": 2,
+            "/dev/nvidia-modeset": 2
+          }
+        },
+        {
+          "stage": "after-card-close",
+          "total_fds": 20,
+          "node_counts": {
+            "/dev/nvidiactl": 4,
+            "/dev/nvidia0": 12,
+            "/dev/dri/renderD129": 2,
+            "/dev/nvidia-modeset": 2
+          }
+        },
+        {
+          "stage": "after-release-thread",
+          "total_fds": 14,
+          "node_counts": {
+            "/dev/nvidiactl": 4,
+            "/dev/nvidia0": 7,
+            "/dev/dri/renderD129": 2,
+            "/dev/nvidia-modeset": 1
+          }
+        },
+        {
+          "stage": "one-second-after-cleanup",
+          "total_fds": 14,
+          "node_counts": {
+            "/dev/nvidiactl": 4,
+            "/dev/nvidia0": 7,
+            "/dev/dri/renderD129": 2,
+            "/dev/nvidia-modeset": 1
+          }
+        }
+      ]
+    }
+  ],
+  "compositor_mutated": false
+}

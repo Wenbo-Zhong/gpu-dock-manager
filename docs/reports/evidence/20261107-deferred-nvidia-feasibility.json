@@ -1,0 +1,264 @@
+{
+  "date": "2026-11-07",
+  "egl_vendor_policy": "system default, both vendors available",
+  "tests": [
+    {
+      "source_report": "deferred-nvidia-20261107-093953-8f8b69a6.json",
+      "source_sha256": "78be5150be68c7098a2ec5e7141ce32b433788dec7549e25f275e3908259a7b2",
+      "case": "amd-only",
+      "exit_code": 0,
+      "renderer": "AMD Radeon 890M Graphics (radeonsi, strix1, ACO, DRM 3.64, 7.0.0-42-generic)",
+      "renderer_after": "AMD Radeon 890M Graphics (radeonsi, strix1, ACO, DRM 3.64, 7.0.0-42-generic)",
+      "amd_context_still_current": true,
+      "cleanup": {
+        "unbind": true,
+        "destroy_context": true,
+        "terminate": true,
+        "destroy_gbm": true,
+        "release_thread": true
+      },
+      "final_node_counts": {},
+      "observation_samples": [
+        {
+          "stage": "amd-current-before-nvidia",
+          "node_counts": {
+            "/dev/dri/renderD128": 4
+          }
+        },
+        {
+          "stage": "amd-current-after-nvidia",
+          "node_counts": {
+            "/dev/dri/renderD128": 4
+          }
+        }
+      ]
+    },
+    {
+      "source_report": "deferred-nvidia-20261107-093954-d5920283.json",
+      "source_sha256": "5a9654443c9da47bc863b64bd802c40547cf9a0ac1d771be79c67fb82337e86c",
+      "case": "amd-plus-nvidia-gbm",
+      "exit_code": 0,
+      "renderer": "AMD Radeon 890M Graphics (radeonsi, strix1, ACO, DRM 3.64, 7.0.0-42-generic)",
+      "renderer_after": "AMD Radeon 890M Graphics (radeonsi, strix1, ACO, DRM 3.64, 7.0.0-42-generic)",
+      "amd_context_still_current": true,
+      "cleanup": {
+        "unbind": true,
+        "destroy_context": true,
+        "terminate": true,
+        "destroy_gbm": true,
+        "release_thread": true
+      },
+      "final_node_counts": {},
+      "observation_samples": [
+        {
+          "stage": "amd-current-before-nvidia",
+          "node_counts": {
+            "/dev/dri/renderD128": 4
+          }
+        },
+        {
+          "stage": "after-nvidia-card-open",
+          "node_counts": {
+            "/dev/dri/renderD128": 4,
+            "/dev/dri/card0": 1
+          }
+        },
+        {
+          "stage": "after-nvidia-gbm-create",
+          "node_counts": {
+            "/dev/dri/renderD128": 4,
+            "/dev/dri/card0": 1
+          }
+        },
+        {
+          "stage": "after-nvidia-gbm-and-card-close",
+          "node_counts": {
+            "/dev/dri/renderD128": 4
+          }
+        },
+        {
+          "stage": "amd-current-after-nvidia",
+          "node_counts": {
+            "/dev/dri/renderD128": 4
+          }
+        }
+      ]
+    },
+    {
+      "source_report": "deferred-nvidia-20261107-093956-9fe25951.json",
+      "source_sha256": "d92253f63548250e4271eb9e5c1a47e1cf047aab8d8761418416798b42b2b412",
+      "case": "amd-plus-nvidia-egl",
+      "exit_code": 0,
+      "renderer": "AMD Radeon 890M Graphics (radeonsi, strix1, ACO, DRM 3.64, 7.0.0-42-generic)",
+      "renderer_after": "AMD Radeon 890M Graphics (radeonsi, strix1, ACO, DRM 3.64, 7.0.0-42-generic)",
+      "amd_context_still_current": true,
+      "cleanup": {
+        "unbind": true,
+        "destroy_context": true,
+        "terminate": true,
+        "destroy_gbm": true,
+        "release_thread": true
+      },
+      "final_node_counts": {
+        "/dev/nvidiactl": 4,
+        "/dev/nvidia0": 7,
+        "/dev/dri/renderD129": 2,
+        "/dev/nvidia-modeset": 1
+      },
+      "observation_samples": [
+        {
+          "stage": "amd-current-before-nvidia",
+          "node_counts": {
+            "/dev/dri/renderD128": 4
+          }
+        },
+        {
+          "stage": "amd-current-after-nvidia",
+          "node_counts": {
+            "/dev/dri/renderD128": 4,
+            "/dev/nvidiactl": 4,
+            "/dev/nvidia0": 7,
+            "/dev/dri/renderD129": 2,
+            "/dev/nvidia-modeset": 1
+          }
+        }
+      ],
+      "explicit_amd_restore_succeeded": true
+    },
+    {
+      "source_report": "deferred-nvidia-20261107-094126-77aa5e20.json",
+      "source_sha256": "9e0aaf96f68ffaade9faa8da2b306bbf50652214222773b3f70aa3f16ea27552",
+      "case": "amd-plus-nvidia-kms",
+      "exit_code": 0,
+      "renderer": "AMD Radeon 890M Graphics (radeonsi, strix1, ACO, DRM 3.64, 7.0.0-42-generic)",
+      "renderer_after": "AMD Radeon 890M Graphics (radeonsi, strix1, ACO, DRM 3.64, 7.0.0-42-generic)",
+      "amd_context_still_current": true,
+      "cleanup": {
+        "unbind": true,
+        "destroy_context": true,
+        "terminate": true,
+        "destroy_gbm": true,
+        "release_thread": true
+      },
+      "final_node_counts": {},
+      "observation_samples": [
+        {
+          "stage": "amd-current-before-nvidia",
+          "node_counts": {
+            "/dev/dri/renderD128": 4
+          }
+        },
+        {
+          "stage": "after-nvidia-kms-query",
+          "node_counts": {
+            "/dev/dri/renderD128": 4,
+            "/dev/dri/card0": 1
+          }
+        },
+        {
+          "stage": "after-nvidia-kms-card-close",
+          "node_counts": {
+            "/dev/dri/renderD128": 4
+          }
+        },
+        {
+          "stage": "amd-current-after-nvidia",
+          "node_counts": {
+            "/dev/dri/renderD128": 4
+          }
+        }
+      ],
+      "connectors_queried": [
+        129,
+        133,
+        137,
+        141
+      ]
+    },
+    {
+      "source_report": "deferred-nvidia-20261107-094302-61719533.json",
+      "source_sha256": "ccd6fb9cbdc33e8e9c932f8b8213f3940aff82ee82cd5066b69ddddbba428192",
+      "case": "amd-plus-nvidia-dumb-buffer",
+      "exit_code": 0,
+      "renderer": "AMD Radeon 890M Graphics (radeonsi, strix1, ACO, DRM 3.64, 7.0.0-42-generic)",
+      "renderer_after": "AMD Radeon 890M Graphics (radeonsi, strix1, ACO, DRM 3.64, 7.0.0-42-generic)",
+      "amd_context_still_current": true,
+      "cleanup": {
+        "unbind": true,
+        "destroy_context": true,
+        "terminate": true,
+        "destroy_gbm": true,
+        "release_thread": true
+      },
+      "final_node_counts": {},
+      "observation_samples": [
+        {
+          "stage": "amd-current-before-nvidia",
+          "node_counts": {
+            "/dev/dri/renderD128": 4
+          }
+        },
+        {
+          "stage": "after-nvidia-kms-query",
+          "node_counts": {
+            "/dev/dri/renderD128": 4,
+            "/dev/dri/card0": 1
+          }
+        },
+        {
+          "stage": "after-private-dumb-allocation",
+          "node_counts": {
+            "/dev/dri/renderD128": 4,
+            "/dev/dri/card0": 1
+          }
+        },
+        {
+          "stage": "after-private-dumb-map-and-write",
+          "node_counts": {
+            "/dev/dri/renderD128": 4,
+            "/dev/dri/card0": 2
+          }
+        },
+        {
+          "stage": "after-private-dumb-destroy",
+          "node_counts": {
+            "/dev/dri/renderD128": 4,
+            "/dev/dri/card0": 1
+          }
+        },
+        {
+          "stage": "after-nvidia-kms-card-close",
+          "node_counts": {
+            "/dev/dri/renderD128": 4
+          }
+        },
+        {
+          "stage": "amd-current-after-nvidia",
+          "node_counts": {
+            "/dev/dri/renderD128": 4
+          }
+        }
+      ],
+      "connectors_queried": [
+        129,
+        133,
+        137,
+        141
+      ],
+      "private_buffer_write_verified": true,
+      "private_buffer": {
+        "width": 64,
+        "height": 64,
+        "pitch": 256,
+        "size": 16384,
+        "submitted_to_display": false
+      },
+      "dumb_destroy_status": 0
+    }
+  ],
+  "initial_software_controls_excluded": [
+    "deferred-nvidia-20261107-093902-09d4429b.json",
+    "deferred-nvidia-20261107-093903-c8c9c642.json",
+    "deferred-nvidia-20261107-093906-adaba29b.json"
+  ]
+}

@@ -1,0 +1,5 @@
+"""USB4 GPU Manager: native UI and a privileged, local-only manager."""
+__version__ = "0.1.2"
+BUS_NAME = "io.github.usb4gpumanager.Manager"
+BUS_PATH = "/io/github/usb4gpumanager/Manager"
+INTERFACE = BUS_NAME + "1"

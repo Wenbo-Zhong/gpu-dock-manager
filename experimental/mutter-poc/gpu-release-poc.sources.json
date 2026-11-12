@@ -1,0 +1,16 @@
+{
+  "src/backends/meta-cursor-renderer.c": "df4014f014a8134557e0549aba2393744a5e4f004f5f2984ac7c5e45aad3a16f",
+  "src/backends/meta-egl.c": "b8f8a8712dd616dd4ed186ba0f5887887517ef12f31987eec9968b8a0625db6d",
+  "src/backends/native/meta-backend-native.c": "e40c49cef592d4927ca5130a37245d7eaa26d837b2d0c379aca3c6366125047b",
+  "src/backends/native/meta-cursor-renderer-native.c": "1d19f50fa4eb2592d661481dc4cd24091360b898925e59c47014b8a0dd21b5be",
+  "src/backends/native/meta-device-pool.c": "4f66369084667fb9c262d41dd1b93f75f5e0cd6c45c1fd4894b3179bf0f14729",
+  "src/backends/native/meta-drm-lease.c": "1ad274ec6a5616b163da23f4f1f881bf9b90f076e26f857f25bcd9c5b9ced0d4",
+  "src/backends/native/meta-gpu-drm-only-poc.h": null,
+  "src/backends/native/meta-gpu-release-poc.h": null,
+  "src/backends/native/meta-kms-impl-device.c": "faea762821f12ee7e13defcb3e553fcc777ccac9095ec45c12a00bd68d0ae8c5",
+  "src/backends/native/meta-onscreen-native.c": "e2818a9bf52cb87e92e375bb4f63f371315f15ce7eaa555d52153a151a6265fc",
+  "src/backends/native/meta-render-device-gbm.c": "812cc9f3af5a1e823498713efc09280e28787cce40043a9e651b40a8b38fc2bd",
+  "src/backends/native/meta-render-device.c": "410078beca75a9122eef814fa379b2799d5fe54fc3f78ab2b21443365e89a680",
+  "src/backends/native/meta-renderer-native-poc.inc": null,
+  "src/backends/native/meta-renderer-native.c": "eee6ef2142d2830d752b8479b2e074c4399c619e3cbdf7b2d64383c47046db35"
+}

@@ -1,0 +1,386 @@
+{
+  "date": "2026-11-05",
+  "base": "Ubuntu mutter 50.1-0ubuntu2.5",
+  "real_mutter_build": "passed",
+  "private_prefix_install": "passed",
+  "gnome_shell_linkage": "passed",
+  "gnome_shell_version_smoke": "passed",
+  "launcher_verify_only": "passed after library identity/startup evidence guards added; temporary state only",
+  "python_regressions": 79,
+  "private_gio_stub_tests": 7,
+  "address_sanitizer": "passed (leak checks disabled for GLib process caches)",
+  "undefined_behavior_sanitizer": "passed",
+  "full_upstream_mutter_test_suite": "not run (tests disabled in private build)",
+  "original_graphical_login": "failed; duplicate ClutterActor registration, recovered by user via TTY disable",
+  "gi_native_library_identity_after_fix": "passed for Meta, Clutter, Cogl, Mtk",
+  "isolated_headless_gnome_startup_after_fix": "passed; full Shell JS, alive for 3 seconds after startup, DisplayConfig responded, runtime libraries each mapped once",
+  "physical_wayland_login_after_fix": "passed 2026-11-06; experimental bus PID matches current Shell service; AMD primary, one view",
+  "live_gnome_reclaim": "not invoked: normal cleanup already removed cache, NVIDIA fds remain",
+  "single_trial_disarm": "observed on real login: trial_consumed=true, DropInPaths empty",
+  "system_libmutter_verification": "unchanged",
+  "login_override_enabled": false,
+  "patch_sha256": "4393154981fd6cc1cd5f857a829d8229a7ab8c6a6574130b1a2ac34e6ba88199",
+  "library_sha256": "07482d1aac2080aeba25974b022f54b3b13d3712085567685772f92a82a2a962",
+  "live_reference_observation": "RenderDevice finalized, tracked DRM DeviceFile refs=0 and closed; residual NVIDIA/render-node fds observed",
+  "trace_v2": {
+    "date": "2026-11-06",
+    "patch_sha256": "8eeda06a8518677c76b928a866ffe5e4bb725d72689e87bbd78d1246a4878ed7",
+    "library_sha256": "5bb237200e2990e27c8498c8d74cb6df57f9445eb996d8890fc188b7ef937d8e",
+    "real_mutter_build": "passed",
+    "gi_native_identity": "passed",
+    "isolated_gnome_startup": "passed with fd tracing enabled",
+    "physical_gnome_session": "passed startup and inspect 2026-11-06 00:51; AMD primary, one view; no reclaim",
+    "python_regressions": 79,
+    "asan_ubsan_stub_tests": 8,
+    "active_library_unchanged": true,
+    "upstream_companion_warnings": "two maybe-uninitialized warnings in unmodified Clutter layout code",
+    "live_events": 323,
+    "live_snapshot_groups": 16,
+    "live_scans_truncated": false,
+    "nvidia_fd_progression": [
+      0,
+      6,
+      8,
+      20
+    ],
+    "nvidia_fd_count_after_terminate_and_gbm_destroy": 20
+  },
+  "independent_gbm_context_probe": {
+    "date": "2026-11-07",
+    "display_control": "passed; 8 NVIDIA fds remain after cleanup",
+    "context_probe": "passed; create-context adds 6, make-current adds 6; 20 before release-thread, 14 after",
+    "cleanup_calls": "all returned success",
+    "process_exit": "both exited normally",
+    "real_gnome_changed": false,
+    "safe_eject_implemented": false
+  },
+  "gbm_lifetime_series": {
+    "date": "2026-11-07",
+    "same_thread_cycles": 3,
+    "fresh_thread_cycles": 3,
+    "fd_counts_after_cycles": [
+      14,
+      14,
+      14
+    ],
+    "both_processes_exited_normally": true,
+    "cleanup_calls_succeeded": true,
+    "thread_exit_further_release_observed": false,
+    "compositor_modified": false,
+    "supported_full_release_api": "not identified in reviewed core EGL cleanup interfaces"
+  },
+  "drm_only_feasibility": {
+    "date": "2026-11-07",
+    "amd_renderer": "AMD Radeon 890M, radeonsi hardware path on renderD128",
+    "real_child_cases": 5,
+    "kms_query_gbm_and_dumb_buffer_closed_cleanly": true,
+    "amd_context_preserved": true,
+    "mixed_egl_retained_nvidia_fds": 14,
+    "real_external_output": "not tested",
+    "compositor_patch": "not implemented",
+    "initial_llvmpipe_controls_excluded": 3
+  },
+  "drm_only_v1": {
+    "date": "2026-11-09",
+    "patch_sha256": "81c1b056b60b915347a43c5fa2fa9a8725472ddc0bdd5027305703d1db9d19a2",
+    "library_sha256": "ffd1d10dde344eb1de2ce72c1aafde5a6a3274c7d0133b7c469e8b5f8eb66624",
+    "real_build": "passed",
+    "gi_library_identity": true,
+    "device_free_headless_startup": {
+      "passed": true,
+      "mode": "headless-software",
+      "drm_devices_visible": false,
+      "drm_primary_nodes_visible": false,
+      "target_fds": [],
+      "system_bus_visible": false,
+      "separate_session_bus": true,
+      "system_bus_redirected_to_private_bus": true,
+      "shell_js_started": true,
+      "stable_after_start_seconds": 3,
+      "display_config_responded": true,
+      "library_identity": {
+        "Meta": true,
+        "Clutter": true,
+        "Cogl": true,
+        "Mtk": true
+      },
+      "hardware_verified": false,
+      "library_sha256": "ffd1d10dde344eb1de2ce72c1aafde5a6a3274c7d0133b7c469e8b5f8eb66624"
+    },
+    "render_only_startup": {
+      "passed": true,
+      "mode": "headless-render-nodes",
+      "drm_devices_visible": true,
+      "drm_primary_nodes_visible": false,
+      "target_fds": [
+        "/dev/dri/renderD129"
+      ],
+      "system_bus_visible": false,
+      "separate_session_bus": true,
+      "system_bus_redirected_to_private_bus": true,
+      "shell_js_started": true,
+      "stable_after_start_seconds": 3,
+      "display_config_responded": true,
+      "library_identity": {
+        "Meta": true,
+        "Clutter": true,
+        "Cogl": true,
+        "Mtk": true
+      },
+      "hardware_verified": false,
+      "library_sha256": "ffd1d10dde344eb1de2ce72c1aafde5a6a3274c7d0133b7c469e8b5f8eb66624"
+    },
+    "python_regressions": 81,
+    "asan_ubsan_stub_tests": 9,
+    "launcher_verify_only": "passed with temporary state; no real trial configured",
+    "previous_active_library_unchanged": true,
+    "physical_wayland_login": "passed no-external-display trial 2026-11-09; AMD primary, one view; GNOME target/shared NVIDIA fds empty",
+    "external_output": "2560x1440 desktop visible and windows can move onto it. Cursor reported missing. GNOME scan found only card0 among target nodes.",
+    "detach": "not run",
+    "render_only_log_sha256": "dc2e2ee16e4de6d807d528cb6b69149e6434bd065a10552b8f76950dc2868a59",
+    "physical_no_external_fd_rechecks": [
+      {
+        "same_process_instance": true,
+        "target_or_shared_nvidia_nodes": []
+      },
+      {
+        "same_process_instance": true,
+        "target_or_shared_nvidia_nodes": []
+      }
+    ]
+  },
+  "drm_only_v2": {
+    "library_sha256": "fae22baab6529961f92b96c862308af6cde1a8df795f1dac2650a64fbbacc0e0",
+    "patch_sha256": "0f83f889c5439988883444e41fa699e423ad2a9ef3af80fc527ed95f010c22ce",
+    "device_free_startup": {
+      "passed": true,
+      "mode": "headless-software",
+      "drm_devices_visible": false,
+      "drm_primary_nodes_visible": false,
+      "target_fds": [],
+      "system_bus_visible": false,
+      "separate_session_bus": true,
+      "system_bus_redirected_to_private_bus": true,
+      "shell_js_started": true,
+      "stable_after_start_seconds": 3,
+      "display_config_responded": true,
+      "library_identity": {
+        "Meta": true,
+        "Clutter": true,
+        "Cogl": true,
+        "Mtk": true
+      },
+      "hardware_verified": false,
+      "library_sha256": "fae22baab6529961f92b96c862308af6cde1a8df795f1dac2650a64fbbacc0e0"
+    },
+    "render_node_startup": {
+      "passed": true,
+      "mode": "headless-render-nodes",
+      "drm_devices_visible": true,
+      "drm_primary_nodes_visible": false,
+      "target_fds": [
+        "/dev/dri/renderD129"
+      ],
+      "system_bus_visible": false,
+      "separate_session_bus": true,
+      "system_bus_redirected_to_private_bus": true,
+      "shell_js_started": true,
+      "stable_after_start_seconds": 3,
+      "display_config_responded": true,
+      "library_identity": {
+        "Meta": true,
+        "Clutter": true,
+        "Cogl": true,
+        "Mtk": true
+      },
+      "hardware_verified": false,
+      "library_sha256": "fae22baab6529961f92b96c862308af6cde1a8df795f1dac2650a64fbbacc0e0"
+    },
+    "python_tests": 81,
+    "c_tests": 9,
+    "cursor_strategy": "software cursor on all GPUs in DRM-only trial",
+    "physical_cursor": "user confirmed visible across both physical displays",
+    "v1_external_source_report": "20261109-203411-7b466508.json",
+    "v1_external_source_sha256": "85958c22d3895572cc0ad3c801e6d96f201d395882ace7e8734e2d147b89aaf0",
+    "internal_display": "user reported a small area of corruption; cause undetermined",
+    "dual_display_source_report": "20261109-213427-74426ff2.json",
+    "dual_display_source_sha256": "bdfa709c4343a6acb9584d5761cb5f78350c36096020c15153ac0ffa6bc70900",
+    "dual_display_pid": 3556086,
+    "dual_display_view_count": 2,
+    "dual_display_target_or_shared_nvidia_nodes": [
+      "/dev/dri/card0"
+    ]
+  },
+  "drm_only_v3": {
+    "library_sha256": "1bb3e602d736aceb7a8cb0b9cdceb5354f3745b046f89a4af571a0948184182f",
+    "patch_sha256": "700e029207cbd750f4cb58130809eb355099a46d7d3d06bcb69136c20cf81c18",
+    "device_free_startup": {
+      "passed": true,
+      "mode": "headless-software",
+      "drm_devices_visible": false,
+      "drm_primary_nodes_visible": false,
+      "target_fds": [],
+      "system_bus_visible": false,
+      "separate_session_bus": true,
+      "system_bus_redirected_to_private_bus": true,
+      "shell_js_started": true,
+      "stable_after_start_seconds": 3,
+      "display_config_responded": true,
+      "library_identity": {
+        "Meta": true,
+        "Clutter": true,
+        "Cogl": true,
+        "Mtk": true
+      },
+      "hardware_verified": false,
+      "library_sha256": "1bb3e602d736aceb7a8cb0b9cdceb5354f3745b046f89a4af571a0948184182f"
+    },
+    "render_node_startup": {
+      "passed": true,
+      "mode": "headless-render-nodes",
+      "drm_devices_visible": true,
+      "drm_primary_nodes_visible": false,
+      "target_fds": [
+        "/dev/dri/renderD129"
+      ],
+      "system_bus_visible": false,
+      "separate_session_bus": true,
+      "system_bus_redirected_to_private_bus": true,
+      "shell_js_started": true,
+      "stable_after_start_seconds": 3,
+      "display_config_responded": true,
+      "library_identity": {
+        "Meta": true,
+        "Clutter": true,
+        "Cogl": true,
+        "Mtk": true
+      },
+      "hardware_verified": false,
+      "library_sha256": "1bb3e602d736aceb7a8cb0b9cdceb5354f3745b046f89a4af571a0948184182f"
+    },
+    "launcher_verify_only": "passed with temporary state",
+    "python_tests": 81,
+    "c_tests": 9,
+    "cursor_strategy": "use native AMD hardware cursor where available and inhibit software overlay per hardware-managed view; target NVIDIA stays software-only",
+    "physical_cursor_and_internal_display": "user confirmed both displays and the cursor worked normally",
+    "dual_display_source_report": "20261109-214722-b18a4a82.json",
+    "dual_display_source_sha256": "d03fa8bf2c815035b7fc126f8fba871a3cd86b30cdd2bb61441d98d46688483d",
+    "dual_display_pid": 3637852,
+    "dual_display_start_time": "37934227",
+    "dual_display_view_count": 2,
+    "dual_display_target_or_shared_nvidia_nodes": [
+      "/dev/dri/card0"
+    ],
+    "output_disable_in_same_session": {
+      "source_report": "20261109-215043-f3f10f55.json",
+      "source_sha256": "30a60658a68b89acc611fdb67242ae371d6f4532567cfaddb5e6730419ae4dde",
+      "same_process_instance": true,
+      "primary_driver": "amdgpu",
+      "view_count": 1,
+      "lingering_count": 0,
+      "connector": "DP-12",
+      "connector_status": "connected",
+      "connector_enabled": false,
+      "target_cache_present": false,
+      "target_or_shared_nvidia_nodes": [],
+      "fd_scan_complete": true,
+      "normal_cleanup": [
+        "KMS holds reached zero",
+        "RenderDevice finalized",
+        "DeviceFile refs reached zero",
+        "card0 closed"
+      ],
+      "detach_safe": false,
+      "other_holders_observed": [
+        "Xwayland",
+        "WebKitWebProces (clash-verge)",
+        "ptyxis"
+      ]
+    }
+  },
+  "drm_only_v4": {
+    "library_sha256": "da1107e696cc3d45d88284342f5a3279117b4a9dfbe143f250892ea0fa120591",
+    "patch_sha256": "087b661dd4f6bc6552bd719485490d31a88999a15fa26c37e61a119de4bf1742",
+    "device_free_startup": {
+      "passed": true,
+      "mode": "headless-software",
+      "drm_devices_visible": false,
+      "drm_primary_nodes_visible": false,
+      "target_fds": [],
+      "system_bus_visible": false,
+      "separate_session_bus": true,
+      "system_bus_redirected_to_private_bus": true,
+      "shell_js_started": true,
+      "stable_after_start_seconds": 3,
+      "display_config_responded": true,
+      "library_identity": {
+        "Meta": true,
+        "Clutter": true,
+        "Cogl": true,
+        "Mtk": true
+      },
+      "hardware_verified": false,
+      "library_sha256": "da1107e696cc3d45d88284342f5a3279117b4a9dfbe143f250892ea0fa120591"
+    },
+    "render_node_startup": {
+      "passed": true,
+      "mode": "headless-render-nodes",
+      "drm_devices_visible": true,
+      "drm_primary_nodes_visible": false,
+      "target_fds": [
+        "/dev/dri/renderD129"
+      ],
+      "system_bus_visible": false,
+      "separate_session_bus": true,
+      "system_bus_redirected_to_private_bus": true,
+      "shell_js_started": true,
+      "stable_after_start_seconds": 3,
+      "display_config_responded": true,
+      "library_identity": {
+        "Meta": true,
+        "Clutter": true,
+        "Cogl": true,
+        "Mtk": true
+      },
+      "hardware_verified": false,
+      "library_sha256": "da1107e696cc3d45d88284342f5a3279117b4a9dfbe143f250892ea0fa120591"
+    },
+    "launcher_verify_only": "passed with temporary state",
+    "python_tests": 81,
+    "c_tests": 9,
+    "live_v3_independent_xwayland_protocol": {
+      "version": "24.1.10",
+      "received_via_scm_rights": [
+        "/dev/dri/card0",
+        "/dev/dri/card1"
+      ],
+      "wayland_event": "wp_drm_lease_device_v1.drm_fd"
+    },
+    "isolated_xwayland_render_node_lease_comparison": {
+      "v3": {
+        "ready": true,
+        "lease_globals": 2,
+        "lease_binds": 2
+      },
+      "v4": {
+        "ready": true,
+        "lease_globals": 1,
+        "lease_binds": 1
+      }
+    },
+    "physical_v4_session": {
+      "source_report": "20261109-225537-9bf74ee4.json",
+      "source_sha256": "83053d53686905062d999ecf3fbfa9b67c61d72a406bd622e5a7c9d752e7ae51",
+      "gnome_shell_pid": 3963158,
+      "target_output_allocated": true,
+      "target_output_enabled_at_scan": false,
+      "gnome_shell_target_or_shared_nvidia_nodes": [],
+      "xwayland_pid": 3965411,
+      "xwayland_drm_nodes": ["/dev/dri/card1", "/dev/dri/renderD128"],
+      "holder_scan_complete": true,
+      "other_holders_observed": ["WebKitWebProces (Clash Verge)"],
+      "detach_safe": false
+    },
+    "physical_detach": "pending"
+  }
+}

@@ -1,0 +1,74 @@
+{
+  "date": "2026-11-09",
+  "source_report": "20261109-001317-af3c7158.json",
+  "source_sha256": "af012adfa35cacfe77af21836bd07e185690b4f847b318e00a00bf377d32343d",
+  "initial": {
+    "target": "/dev/dri/card0",
+    "primary": "/dev/dri/card1",
+    "primary_driver": "amdgpu",
+    "reason": "",
+    "outcome": "inspect-only",
+    "eligible": true,
+    "cache_before": false,
+    "cache_present": false,
+    "render_device_finalized": false,
+    "view_count": 1,
+    "lingering_count": 0
+  },
+  "before": {
+    "nodes": [],
+    "complete": true
+  },
+  "independent_fd_rechecks": [
+    {
+      "same_process_instance": true,
+      "target_or_shared_nvidia_nodes": []
+    },
+    {
+      "same_process_instance": true,
+      "target_or_shared_nvidia_nodes": []
+    }
+  ],
+  "event_count": 78,
+  "event_capture": {
+    "exit_code": 0,
+    "line_limit": 4000,
+    "possibly_truncated": false
+  },
+  "events": [
+    "GPU-RELEASE-POC event=device-open path=/dev/dri/card0 fd=12 refs=1",
+    "GPU-RELEASE-POC event=device-acquire path=/dev/dri/card0 fd=12 refs=2",
+    "GPU-RELEASE-POC event=gbm-create object=<object> path=/dev/dri/card0 fd=12 gbm=<object>",
+    "GPU-RELEASE-POC event=drm-only-device path=/dev/dri/card0",
+    "GPU-RELEASE-POC event=device-release path=/dev/dri/card0 fd=12 refs=1",
+    "GPU-RELEASE-POC event=device-acquire path=/dev/dri/card0 fd=12 refs=2",
+    "GPU-RELEASE-POC event=kms-reopen path=/dev/dri/card0",
+    "GPU-RELEASE-POC event=kms-hold path=/dev/dri/card0 holds=1",
+    "GPU-RELEASE-POC event=gbm-create object=<object> path=/dev/dri/card1 fd=13 gbm=<object>",
+    "GPU-RELEASE-POC event=egl-display platform=<object> native=<object> display=<object>",
+    "GPU-RELEASE-POC event=egl-call operation=initialize object=<object> result=1",
+    "GPU-RELEASE-POC event=render-device-display object=<object> type=MetaRenderDeviceGbm path=/dev/dri/card1 display=<object>",
+    "GPU-RELEASE-POC event=drm-only-cpu-copy path=/dev/dri/card0",
+    "GPU-RELEASE-POC event=gpu-data-created path=/dev/dri/card0",
+    "GPU-RELEASE-POC event=gpu-data-created path=/dev/dri/card1",
+    "GPU-RELEASE-POC event=egl-device-node device=<object> attribute=<object> node=/dev/dri/renderD128",
+    "GPU-RELEASE-POC event=egl-device-node device=<object> attribute=<object> node=/dev/dri/renderD128",
+    "GPU-RELEASE-POC event=drm-only-software-cursor path=/dev/dri/card0",
+    "GPU-RELEASE-POC event=interface-ready version=1 primary=/dev/dri/card1",
+    "GPU-RELEASE-POC event=kms-unhold path=/dev/dri/card0 holds=0",
+    "GPU-RELEASE-POC event=device-release path=/dev/dri/card0 fd=12 refs=1",
+    "GPU-RELEASE-POC event=normal-cache-pass views=1 lingering=0 detached=0 pending=0",
+    "GPU-RELEASE-POC event=normal-cache-decision path=/dev/dri/card0 retained=0",
+    "GPU-RELEASE-POC event=gpu-data-free path=/dev/dri/card0",
+    "GPU-RELEASE-POC event=render-device-dispose path=/dev/dri/card0",
+    "GPU-RELEASE-POC event=gbm-destroy-begin device=<object>",
+    "GPU-RELEASE-POC event=gbm-destroy-returned",
+    "GPU-RELEASE-POC event=render-device-finalize path=/dev/dri/card0",
+    "GPU-RELEASE-POC event=device-release path=/dev/dri/card0 fd=12 refs=0",
+    "GPU-RELEASE-POC event=device-close-returned path=/dev/dri/card0 fd=12",
+    "GPU-RELEASE-POC event=normal-cache-decision path=/dev/dri/card1 retained=1"
+  ],
+  "mutation_performed": false,
+  "external_output_tested": false,
+  "safe_detach_tested": false
+}

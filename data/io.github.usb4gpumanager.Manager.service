@@ -1,0 +1,5 @@
+[D-BUS Service]
+Name=io.github.usb4gpumanager.Manager
+Exec=/usr/bin/false
+User=root
+SystemdService=usb4-gpu-manager.service

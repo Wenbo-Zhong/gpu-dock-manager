@@ -1,0 +1,191 @@
+{
+  "time": "2026-11-06T00:35:51.438106",
+  "pci": "0000:03:00.0",
+  "scope": "independent-child; no GNOME mutation; not a GPU eject test",
+  "exit_code": 0,
+  "stderr": "",
+  "observation": {
+    "samples": [
+      {
+        "stage": "before-egl-load",
+        "fds": []
+      },
+      {
+        "stage": "after-egl-load",
+        "fds": []
+      },
+      {
+        "stage": "after-query-devices",
+        "fds": [
+          {
+            "fd": 4,
+            "node": "/dev/nvidiactl"
+          },
+          {
+            "fd": 5,
+            "node": "/dev/nvidia0"
+          },
+          {
+            "fd": 6,
+            "node": "/dev/nvidia0"
+          },
+          {
+            "fd": 7,
+            "node": "/dev/nvidia0"
+          },
+          {
+            "fd": 8,
+            "node": "/dev/nvidiactl"
+          }
+        ]
+      },
+      {
+        "stage": "after-get-platform-display",
+        "fds": [
+          {
+            "fd": 4,
+            "node": "/dev/nvidiactl"
+          },
+          {
+            "fd": 5,
+            "node": "/dev/nvidia0"
+          },
+          {
+            "fd": 6,
+            "node": "/dev/nvidia0"
+          },
+          {
+            "fd": 7,
+            "node": "/dev/nvidia0"
+          },
+          {
+            "fd": 8,
+            "node": "/dev/nvidiactl"
+          },
+          {
+            "fd": 10,
+            "node": "/dev/dri/renderD129"
+          }
+        ]
+      },
+      {
+        "stage": "after-initialize",
+        "fds": [
+          {
+            "fd": 4,
+            "node": "/dev/nvidiactl"
+          },
+          {
+            "fd": 5,
+            "node": "/dev/nvidia0"
+          },
+          {
+            "fd": 6,
+            "node": "/dev/nvidia0"
+          },
+          {
+            "fd": 7,
+            "node": "/dev/nvidia0"
+          },
+          {
+            "fd": 8,
+            "node": "/dev/nvidiactl"
+          },
+          {
+            "fd": 9,
+            "node": "/dev/nvidia0"
+          },
+          {
+            "fd": 10,
+            "node": "/dev/dri/renderD129"
+          },
+          {
+            "fd": 11,
+            "node": "/dev/nvidia0"
+          }
+        ]
+      },
+      {
+        "stage": "after-terminate",
+        "fds": [
+          {
+            "fd": 4,
+            "node": "/dev/nvidiactl"
+          },
+          {
+            "fd": 5,
+            "node": "/dev/nvidia0"
+          },
+          {
+            "fd": 6,
+            "node": "/dev/nvidia0"
+          },
+          {
+            "fd": 7,
+            "node": "/dev/nvidia0"
+          },
+          {
+            "fd": 8,
+            "node": "/dev/nvidiactl"
+          },
+          {
+            "fd": 9,
+            "node": "/dev/nvidia0"
+          },
+          {
+            "fd": 10,
+            "node": "/dev/dri/renderD129"
+          },
+          {
+            "fd": 11,
+            "node": "/dev/nvidia0"
+          }
+        ]
+      },
+      {
+        "stage": "after-release-thread",
+        "fds": [
+          {
+            "fd": 4,
+            "node": "/dev/nvidiactl"
+          },
+          {
+            "fd": 5,
+            "node": "/dev/nvidia0"
+          },
+          {
+            "fd": 6,
+            "node": "/dev/nvidia0"
+          },
+          {
+            "fd": 7,
+            "node": "/dev/nvidia0"
+          },
+          {
+            "fd": 8,
+            "node": "/dev/nvidiactl"
+          },
+          {
+            "fd": 9,
+            "node": "/dev/nvidia0"
+          },
+          {
+            "fd": 10,
+            "node": "/dev/dri/renderD129"
+          },
+          {
+            "fd": 11,
+            "node": "/dev/nvidia0"
+          }
+        ]
+      }
+    ],
+    "contexts_created": false,
+    "surfaces_created": false,
+    "modesets_requested": false,
+    "device_node": "/dev/dri/card0",
+    "initialize_succeeded": true,
+    "terminate_succeeded": true,
+    "release_thread_succeeded": true
+  }
+}

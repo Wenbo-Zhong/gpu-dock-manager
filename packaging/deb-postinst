@@ -1,0 +1,10 @@
+#!/bin/sh
+set -e
+if [ "$1" = configure ] && [ -d /run/systemd/system ]; then
+    systemctl daemon-reload
+    dbus-send --system --type=method_call --dest=org.freedesktop.DBus /org/freedesktop/DBus org.freedesktop.DBus.ReloadConfig || true
+    # Initial use activates the daemon through its D-Bus service file.
+    if [ -n "${2:-}" ] && systemctl is-active --quiet usb4-gpu-manager.service; then
+        deb-systemd-invoke restart usb4-gpu-manager.service || true
+    fi
+fi

@@ -1,0 +1,278 @@
+{
+  "schema": 1,
+  "date": "2026-11-05",
+  "timezone": "Asia/Shanghai",
+  "environment": {
+    "os": "Ubuntu 26.04.1 LTS",
+    "gnome_shell": "50.1-0ubuntu1.4",
+    "libmutter": "50.1-0ubuntu2.5",
+    "kernel": "7.0.0-42-generic",
+    "nvidia_open": "595.99.02-0ubuntu0.26.04.1",
+    "xwayland": "2:24.1.10-1",
+    "gtk": "4.22.4+ds-0ubuntu0.1"
+  },
+  "raw_report_sha256": "51b482c0ff93e4afd132d368d351fd9cff6d888bdbc543c7402cf64ff606c042",
+  "test": {
+    "target": {
+      "pci": "0000:03:00.0",
+      "vendor": "0x10de",
+      "device": "0x2bb3",
+      "nodes": [
+        "/dev/dri/card0",
+        "/dev/dri/renderD129"
+      ]
+    },
+    "original_vt": 2,
+    "test_vt": 3,
+    "restored": true,
+    "error": null,
+    "restore_error": null,
+    "conclusion": "切换 TTY 后 GNOME 仍持有 GPU 句柄；此方法不能直接实现安全卸载。"
+  },
+  "observations": [
+    {
+      "phase": "before",
+      "seconds_since_start": 0.0,
+      "vt": 2,
+      "pci_present": true,
+      "scan_complete": true,
+      "holders": [
+        {
+          "name": "gnome-shell",
+          "nodes": [
+            "/dev/dri/renderD129",
+            "/dev/nvidia0",
+            "/dev/nvidiactl"
+          ]
+        },
+        {
+          "name": "Xwayland",
+          "nodes": [
+            "/dev/dri/card0"
+          ]
+        },
+        {
+          "name": "ptyxis",
+          "nodes": [
+            "/dev/dri/renderD129",
+            "/dev/nvidia-modeset",
+            "/dev/nvidia0",
+            "/dev/nvidiactl"
+          ]
+        }
+      ]
+    },
+    {
+      "phase": "during",
+      "seconds_since_start": 2.139,
+      "vt": 3,
+      "pci_present": true,
+      "scan_complete": true,
+      "holders": [
+        {
+          "name": "gnome-shell",
+          "nodes": [
+            "/dev/dri/renderD129",
+            "/dev/nvidia0",
+            "/dev/nvidiactl"
+          ]
+        },
+        {
+          "name": "Xwayland",
+          "nodes": [
+            "/dev/dri/card0"
+          ]
+        },
+        {
+          "name": "ptyxis",
+          "nodes": [
+            "/dev/dri/renderD129",
+            "/dev/nvidia-modeset",
+            "/dev/nvidia0",
+            "/dev/nvidiactl"
+          ]
+        }
+      ]
+    },
+    {
+      "phase": "during",
+      "seconds_since_start": 4.213,
+      "vt": 3,
+      "pci_present": true,
+      "scan_complete": true,
+      "holders": [
+        {
+          "name": "gnome-shell",
+          "nodes": [
+            "/dev/dri/renderD129",
+            "/dev/nvidia0",
+            "/dev/nvidiactl"
+          ]
+        },
+        {
+          "name": "Xwayland",
+          "nodes": [
+            "/dev/dri/card0"
+          ]
+        },
+        {
+          "name": "ptyxis",
+          "nodes": [
+            "/dev/dri/renderD129",
+            "/dev/nvidia-modeset",
+            "/dev/nvidia0",
+            "/dev/nvidiactl"
+          ]
+        }
+      ]
+    },
+    {
+      "phase": "during",
+      "seconds_since_start": 6.268,
+      "vt": 3,
+      "pci_present": true,
+      "scan_complete": true,
+      "holders": [
+        {
+          "name": "gnome-shell",
+          "nodes": [
+            "/dev/dri/renderD129",
+            "/dev/nvidia0",
+            "/dev/nvidiactl"
+          ]
+        },
+        {
+          "name": "Xwayland",
+          "nodes": [
+            "/dev/dri/card0"
+          ]
+        },
+        {
+          "name": "ptyxis",
+          "nodes": [
+            "/dev/dri/renderD129",
+            "/dev/nvidia-modeset",
+            "/dev/nvidia0",
+            "/dev/nvidiactl"
+          ]
+        }
+      ]
+    },
+    {
+      "phase": "during",
+      "seconds_since_start": 8.325,
+      "vt": 3,
+      "pci_present": true,
+      "scan_complete": true,
+      "holders": [
+        {
+          "name": "gnome-shell",
+          "nodes": [
+            "/dev/dri/renderD129",
+            "/dev/nvidia0",
+            "/dev/nvidiactl"
+          ]
+        },
+        {
+          "name": "Xwayland",
+          "nodes": [
+            "/dev/dri/card0"
+          ]
+        },
+        {
+          "name": "ptyxis",
+          "nodes": [
+            "/dev/dri/renderD129",
+            "/dev/nvidia-modeset",
+            "/dev/nvidia0",
+            "/dev/nvidiactl"
+          ]
+        }
+      ]
+    },
+    {
+      "phase": "during",
+      "seconds_since_start": 10.139,
+      "vt": 3,
+      "pci_present": true,
+      "scan_complete": true,
+      "holders": [
+        {
+          "name": "gnome-shell",
+          "nodes": [
+            "/dev/dri/renderD129",
+            "/dev/nvidia0",
+            "/dev/nvidiactl"
+          ]
+        },
+        {
+          "name": "Xwayland",
+          "nodes": [
+            "/dev/dri/card0"
+          ]
+        },
+        {
+          "name": "ptyxis",
+          "nodes": [
+            "/dev/dri/renderD129",
+            "/dev/nvidia-modeset",
+            "/dev/nvidia0",
+            "/dev/nvidiactl"
+          ]
+        }
+      ]
+    },
+    {
+      "phase": "after",
+      "seconds_since_start": 10.227,
+      "vt": 2,
+      "pci_present": true,
+      "scan_complete": true,
+      "holders": [
+        {
+          "name": "gnome-shell",
+          "nodes": [
+            "/dev/dri/card0",
+            "/dev/dri/renderD129",
+            "/dev/nvidia0",
+            "/dev/nvidiactl"
+          ]
+        },
+        {
+          "name": "Xwayland",
+          "nodes": [
+            "/dev/dri/card0"
+          ]
+        },
+        {
+          "name": "ptyxis",
+          "nodes": [
+            "/dev/dri/renderD129",
+            "/dev/nvidia-modeset",
+            "/dev/nvidia0",
+            "/dev/nvidiactl"
+          ]
+        }
+      ]
+    }
+  ],
+  "journal_findings": [
+    "GPU /dev/dri/card1 selected primary from builtin panel presence",
+    "Created gbm renderer for /dev/dri/card0 after the user session had started"
+  ],
+  "source": {
+    "mutter_50_1_commit": "8e9bb806da4a6a4fc87aa4a481b228dba6735cbd",
+    "main_reviewed_commit": "432c167ef2de37a708140b02e29881646fc9c13c",
+    "ubuntu_patches_applied": 37,
+    "verified_unchanged_core_files": [
+      "src/backends/native/meta-renderer-native.c",
+      "src/backends/native/meta-backend-native.c",
+      "src/backends/meta-renderer.c",
+      "src/backends/native/meta-render-device.c",
+      "src/backends/native/meta-kms.c",
+      "src/backends/meta-udev.c"
+    ],
+    "ubuntu_orig_sha256": "9344502ce473f788795f26b45f8b8ff53c0a36b867470d705a11a3ee0911021e",
+    "ubuntu_debian_tar_sha256": "50d2d9f011972576ddc4467528c49601918e5a477aa6b3e8268b9d2bf86e7d06"
+  }
+}

@@ -1,0 +1,250 @@
+{
+  "source_sha256": "2222818d1cbe981017eaa8eec48947a4cc8806fca29bcab2180a82efe8c2e5a3",
+  "source_report": "20261106-005123-be17cab8.json",
+  "event_count": 323,
+  "event_capture": {
+    "exit_code": 0,
+    "line_limit": 4000,
+    "possibly_truncated": false
+  },
+  "snapshot_records_validated": true,
+  "snapshots": [
+    {
+      "stage": "gbm-create-before",
+      "object": "object-1",
+      "total": 1,
+      "target_or_shared_nvidia": 0,
+      "truncated": false,
+      "node_counts": {
+        "/dev/dri/card0": 1
+      }
+    },
+    {
+      "stage": "gbm-create-after",
+      "object": "object-2",
+      "total": 1,
+      "target_or_shared_nvidia": 0,
+      "truncated": false,
+      "node_counts": {
+        "/dev/dri/card0": 1
+      }
+    },
+    {
+      "stage": "get-platform-display-before",
+      "object": "object-2",
+      "total": 1,
+      "target_or_shared_nvidia": 0,
+      "truncated": false,
+      "node_counts": {
+        "/dev/dri/card0": 1
+      }
+    },
+    {
+      "stage": "get-platform-display-after",
+      "object": "object-3",
+      "total": 7,
+      "target_or_shared_nvidia": 6,
+      "truncated": false,
+      "node_counts": {
+        "/dev/dri/card0": 1,
+        "/dev/nvidiactl": 2,
+        "/dev/nvidia0": 3,
+        "/dev/dri/renderD129": 1
+      }
+    },
+    {
+      "stage": "initialize-before",
+      "object": "object-3",
+      "total": 7,
+      "target_or_shared_nvidia": 6,
+      "truncated": false,
+      "node_counts": {
+        "/dev/dri/card0": 1,
+        "/dev/nvidiactl": 2,
+        "/dev/nvidia0": 3,
+        "/dev/dri/renderD129": 1
+      }
+    },
+    {
+      "stage": "initialize-after",
+      "object": "object-3",
+      "total": 9,
+      "target_or_shared_nvidia": 8,
+      "truncated": false,
+      "node_counts": {
+        "/dev/dri/card0": 1,
+        "/dev/nvidiactl": 2,
+        "/dev/nvidia0": 5,
+        "/dev/dri/renderD129": 1
+      }
+    },
+    {
+      "stage": "gbm-create-before",
+      "object": "object-4",
+      "total": 22,
+      "target_or_shared_nvidia": 20,
+      "truncated": false,
+      "node_counts": {
+        "/dev/dri/card0": 1,
+        "/dev/nvidiactl": 4,
+        "/dev/nvidia0": 12,
+        "/dev/dri/renderD129": 2,
+        "/dev/nvidia-modeset": 2,
+        "/dev/dri/card1": 1
+      }
+    },
+    {
+      "stage": "gbm-create-after",
+      "object": "object-5",
+      "total": 24,
+      "target_or_shared_nvidia": 20,
+      "truncated": false,
+      "node_counts": {
+        "/dev/dri/card0": 1,
+        "/dev/nvidiactl": 4,
+        "/dev/nvidia0": 12,
+        "/dev/dri/renderD129": 2,
+        "/dev/nvidia-modeset": 2,
+        "/dev/dri/card1": 3
+      }
+    },
+    {
+      "stage": "get-platform-display-before",
+      "object": "object-5",
+      "total": 24,
+      "target_or_shared_nvidia": 20,
+      "truncated": false,
+      "node_counts": {
+        "/dev/dri/card0": 1,
+        "/dev/nvidiactl": 4,
+        "/dev/nvidia0": 12,
+        "/dev/dri/renderD129": 2,
+        "/dev/nvidia-modeset": 2,
+        "/dev/dri/card1": 3
+      }
+    },
+    {
+      "stage": "get-platform-display-after",
+      "object": "object-6",
+      "total": 24,
+      "target_or_shared_nvidia": 20,
+      "truncated": false,
+      "node_counts": {
+        "/dev/dri/card0": 1,
+        "/dev/nvidiactl": 4,
+        "/dev/nvidia0": 12,
+        "/dev/dri/renderD129": 2,
+        "/dev/nvidia-modeset": 2,
+        "/dev/dri/card1": 3
+      }
+    },
+    {
+      "stage": "initialize-before",
+      "object": "object-6",
+      "total": 24,
+      "target_or_shared_nvidia": 20,
+      "truncated": false,
+      "node_counts": {
+        "/dev/dri/card0": 1,
+        "/dev/nvidiactl": 4,
+        "/dev/nvidia0": 12,
+        "/dev/dri/renderD129": 2,
+        "/dev/nvidia-modeset": 2,
+        "/dev/dri/card1": 3
+      }
+    },
+    {
+      "stage": "initialize-after",
+      "object": "object-6",
+      "total": 25,
+      "target_or_shared_nvidia": 20,
+      "truncated": false,
+      "node_counts": {
+        "/dev/dri/card0": 1,
+        "/dev/nvidiactl": 4,
+        "/dev/nvidia0": 12,
+        "/dev/dri/renderD129": 2,
+        "/dev/nvidia-modeset": 2,
+        "/dev/dri/card1": 4
+      }
+    },
+    {
+      "stage": "terminate-before",
+      "object": "object-3",
+      "total": 26,
+      "target_or_shared_nvidia": 20,
+      "truncated": false,
+      "node_counts": {
+        "/dev/dri/card0": 1,
+        "/dev/nvidiactl": 4,
+        "/dev/nvidia0": 12,
+        "/dev/dri/renderD129": 2,
+        "/dev/nvidia-modeset": 2,
+        "/dev/dri/card1": 4,
+        "/dev/dri/renderD128": 1
+      }
+    },
+    {
+      "stage": "terminate-after",
+      "object": "object-3",
+      "total": 26,
+      "target_or_shared_nvidia": 20,
+      "truncated": false,
+      "node_counts": {
+        "/dev/dri/card0": 1,
+        "/dev/nvidiactl": 4,
+        "/dev/nvidia0": 12,
+        "/dev/dri/renderD129": 2,
+        "/dev/nvidia-modeset": 2,
+        "/dev/dri/card1": 4,
+        "/dev/dri/renderD128": 1
+      }
+    },
+    {
+      "stage": "gbm-destroy-before",
+      "object": "object-2",
+      "total": 26,
+      "target_or_shared_nvidia": 20,
+      "truncated": false,
+      "node_counts": {
+        "/dev/dri/card0": 1,
+        "/dev/nvidiactl": 4,
+        "/dev/nvidia0": 12,
+        "/dev/dri/renderD129": 2,
+        "/dev/nvidia-modeset": 2,
+        "/dev/dri/card1": 4,
+        "/dev/dri/renderD128": 1
+      }
+    },
+    {
+      "stage": "gbm-destroy-after",
+      "object": "object-1",
+      "total": 26,
+      "target_or_shared_nvidia": 20,
+      "truncated": false,
+      "node_counts": {
+        "/dev/dri/card0": 1,
+        "/dev/nvidiactl": 4,
+        "/dev/nvidia0": 12,
+        "/dev/dri/renderD129": 2,
+        "/dev/nvidia-modeset": 2,
+        "/dev/dri/card1": 4,
+        "/dev/dri/renderD128": 1
+      }
+    }
+  ],
+  "inspect": {
+    "target": "/dev/dri/card0",
+    "primary": "/dev/dri/card1",
+    "primary_driver": "amdgpu",
+    "reason": "",
+    "outcome": "inspect-only",
+    "eligible": true,
+    "cache_before": false,
+    "cache_present": false,
+    "render_device_finalized": false,
+    "view_count": 1,
+    "lingering_count": 0
+  },
+  "mutation_performed": false
+}

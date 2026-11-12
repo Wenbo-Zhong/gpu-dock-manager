@@ -1,0 +1,11 @@
+[Unit]
+Description=Check for a newer distribution Mutter build
+
+[Timer]
+OnStartupSec=3min
+OnCalendar=daily
+Persistent=true
+RandomizedDelaySec=5min
+
+[Install]
+WantedBy=timers.target

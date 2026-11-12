@@ -1,0 +1,59 @@
+{
+  "date": "2026-11-09",
+  "patch_sha256": "81c1b056b60b915347a43c5fa2fa9a8725472ddc0bdd5027305703d1db9d19a2",
+  "library_sha256": "ffd1d10dde344eb1de2ce72c1aafde5a6a3274c7d0133b7c469e8b5f8eb66624",
+  "real_build": "passed",
+  "gi_library_identity": true,
+  "device_free_headless_startup": {
+    "passed": true,
+    "mode": "headless-software",
+    "drm_devices_visible": false,
+    "drm_primary_nodes_visible": false,
+    "target_fds": [],
+    "system_bus_visible": false,
+    "separate_session_bus": true,
+    "system_bus_redirected_to_private_bus": true,
+    "shell_js_started": true,
+    "stable_after_start_seconds": 3,
+    "display_config_responded": true,
+    "library_identity": {
+      "Meta": true,
+      "Clutter": true,
+      "Cogl": true,
+      "Mtk": true
+    },
+    "hardware_verified": false,
+    "library_sha256": "ffd1d10dde344eb1de2ce72c1aafde5a6a3274c7d0133b7c469e8b5f8eb66624"
+  },
+  "render_only_startup": {
+    "passed": true,
+    "mode": "headless-render-nodes",
+    "drm_devices_visible": true,
+    "drm_primary_nodes_visible": false,
+    "target_fds": [
+      "/dev/dri/renderD129"
+    ],
+    "system_bus_visible": false,
+    "separate_session_bus": true,
+    "system_bus_redirected_to_private_bus": true,
+    "shell_js_started": true,
+    "stable_after_start_seconds": 3,
+    "display_config_responded": true,
+    "library_identity": {
+      "Meta": true,
+      "Clutter": true,
+      "Cogl": true,
+      "Mtk": true
+    },
+    "hardware_verified": false,
+    "library_sha256": "ffd1d10dde344eb1de2ce72c1aafde5a6a3274c7d0133b7c469e8b5f8eb66624"
+  },
+  "python_regressions": 81,
+  "asan_ubsan_stub_tests": 9,
+  "launcher_verify_only": "passed with temporary state; no real trial configured",
+  "previous_active_library_unchanged": true,
+  "physical_wayland_login": "not run",
+  "external_output": "not run",
+  "detach": "not run",
+  "render_only_log_sha256": "dc2e2ee16e4de6d807d528cb6b69149e6434bd065a10552b8f76950dc2868a59"
+}

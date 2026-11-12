@@ -1,0 +1,8 @@
+[Unit]
+Description=Check configured distribution repositories for a newer Mutter base
+ConditionPathExists=%E/usb4-gpu-manager/mutter-watch.json
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/usb4-gpu-mutter-watch check
+TimeoutStartSec=150

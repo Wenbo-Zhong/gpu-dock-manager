@@ -1,0 +1,48 @@
+{
+  "date": "2026-11-05",
+  "base": "Ubuntu mutter 50.1-0ubuntu2.5",
+  "failed_logins": {
+    "journal_local_time_range": ["12:24:16", "12:25:19"],
+    "count": 5,
+    "messages": [
+      "cannot register existing type 'ClutterActor'",
+      "cannot register existing type 'ClutterAnimatable'",
+      "JS ERROR: Error: Unsupported type (null), deriving from fundamental (null)",
+      "Execution of main.js threw exception",
+      "Failed with result 'protocol'"
+    ],
+    "reclaim_not_reached": true,
+    "user_recovered_via_tty_disable": true
+  },
+  "before_fix": {
+    "gpu_initialized": false,
+    "Meta": {"symbol_matches": true, "mapped_copy_count": 1},
+    "Clutter": {"symbol_matches": false, "mapped_copy_count": 2},
+    "Cogl": {"symbol_matches": false, "mapped_copy_count": 2},
+    "Mtk": {"symbol_matches": false, "mapped_copy_count": 2}
+  },
+  "after_fix": {
+    "gpu_initialized": false,
+    "Meta": {"symbol_matches": true, "mapped_copy_count": 1, "source": "private-patched-core"},
+    "Clutter": {"symbol_matches": true, "mapped_copy_count": 1, "source": "system"},
+    "Cogl": {"symbol_matches": true, "mapped_copy_count": 1, "source": "system"},
+    "Mtk": {"symbol_matches": true, "mapped_copy_count": 1, "source": "system"}
+  },
+  "isolated_startup": {
+    "passed": true,
+    "mode": "headless-software",
+    "drm_devices_visible": false,
+    "system_bus_visible": false,
+    "separate_session_bus": true,
+    "system_bus_redirected_to_private_bus": true,
+    "shell_js_started": true,
+    "stable_after_start_seconds": 3,
+    "display_config_responded": true,
+    "library_identity": {"Meta": true, "Clutter": true, "Cogl": true, "Mtk": true},
+    "hardware_verified": false,
+    "library_sha256": "07482d1aac2080aeba25974b022f54b3b13d3712085567685772f92a82a2a962"
+  },
+  "current_login_override_enabled": false,
+  "physical_wayland_retest": "not run",
+  "nvidia_reclaim": "not run"
+}

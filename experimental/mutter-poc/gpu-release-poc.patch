@@ -1,0 +1,1106 @@
+--- a/src/backends/meta-cursor-renderer.c
++++ b/src/backends/meta-cursor-renderer.c
+@@ -29,6 +29,7 @@
+ #include "backends/meta-backend-private.h"
+ #include "backends/meta-logical-monitor-private.h"
+ #include "backends/meta-stage-private.h"
++#include "backends/native/meta-gpu-drm-only-poc.h"
+ #include "clutter/clutter.h"
+ #include "clutter/clutter-mutter.h"
+ #include "cogl/cogl.h"
+@@ -191,7 +192,9 @@
+   MetaCursorRendererPrivate *priv =
+     meta_cursor_renderer_get_instance_private (renderer);
+ 
+-  if (priv->displayed_cursor && priv->needs_overlay)
++  /* Native prepare_frame already emits cursor-painted for this view. */
++  if (priv->displayed_cursor && priv->needs_overlay &&
++      !g_object_get_data (G_OBJECT (stage_view), GPU_POC_HW_CURSOR_VIEW_KEY))
+     {
+       graphene_rect_t rect;
+       MtkRectangle view_layout;
+--- a/src/backends/meta-egl.c
++++ b/src/backends/meta-egl.c
+@@ -22,6 +22,7 @@
+  */
+ 
+ #include "config.h"
++#include "backends/native/meta-gpu-release-poc.h"
+ 
+ #include <EGL/egl.h>
+ #include <EGL/eglext.h>
+@@ -278,7 +279,13 @@
+                      EGLDisplay display,
+                      GError   **error)
+ {
+-  if (!eglInitialize (display, NULL, NULL))
++  EGLBoolean poc_result;
++
++  gpu_release_poc_fds ("initialize-before", display);
++  poc_result = eglInitialize (display, NULL, NULL);
++  GPU_POC_LOG ("event=egl-call operation=initialize object=%p result=%u", display, poc_result);
++  gpu_release_poc_fds ("initialize-after", display);
++  if (!poc_result)
+     {
+       set_egl_error (error);
+       return FALSE;
+@@ -525,9 +532,12 @@
+   if (!is_egl_proc_valid (egl->eglGetPlatformDisplayEXT, error))
+     return EGL_NO_DISPLAY;
+ 
++  gpu_release_poc_fds ("get-platform-display-before", native_display);
+   display = egl->eglGetPlatformDisplayEXT (platform,
+                                            native_display,
+                                            attrib_list);
++  GPU_POC_LOG ("event=egl-display platform=0x%x native=%p display=%p", platform, native_display, display);
++  gpu_release_poc_fds ("get-platform-display-after", display);
+   if (display == EGL_NO_DISPLAY)
+     {
+       set_egl_error (error);
+@@ -542,7 +552,13 @@
+                     EGLDisplay display,
+                     GError   **error)
+ {
+-  if (!eglTerminate (display))
++  EGLBoolean poc_result;
++
++  gpu_release_poc_fds ("terminate-before", display);
++  poc_result = eglTerminate (display);
++  GPU_POC_LOG ("event=egl-call operation=terminate object=%p result=%u", display, poc_result);
++  gpu_release_poc_fds ("terminate-after", display);
++  if (!poc_result)
+     {
+       set_egl_error (error);
+       return FALSE;
+@@ -784,12 +800,18 @@
+                         EGLint       *num_devices,
+                         GError      **error)
+ {
++  EGLBoolean poc_result;
++
+   if (!is_egl_proc_valid (egl->eglQueryDevicesEXT, error))
+     return FALSE;
+ 
+-  if (!egl->eglQueryDevicesEXT (max_devices,
++  gpu_release_poc_fds ("query-devices-before", egl);
++  poc_result = egl->eglQueryDevicesEXT (max_devices,
+                                 devices,
+-                                num_devices))
++                                num_devices);
++  GPU_POC_LOG ("event=egl-call operation=query-devices object=%p result=%u", egl, poc_result);
++  gpu_release_poc_fds ("query-devices-after", egl);
++  if (!poc_result)
+     {
+       set_egl_error (error);
+       return FALSE;
+@@ -822,6 +844,9 @@
+         }
+     }
+ 
++  if (name == 0x3233 || name == 0x3377)
++    GPU_POC_LOG ("event=egl-device-node device=%p attribute=0x%x node=%s",
++                 device, name, device_string ? device_string : "none");
+   *out_string = device_string;
+   return TRUE;
+ }
+--- a/src/backends/native/meta-backend-native.c
++++ b/src/backends/native/meta-backend-native.c
+@@ -31,6 +31,7 @@
+  */
+ 
+ #include "config.h"
++#include "backends/native/meta-gpu-drm-only-poc.h"
+ 
+ #include "backends/native/meta-backend-native.h"
+ #include "backends/native/meta-backend-native-private.h"
+@@ -478,6 +479,9 @@
+           MetaRenderDevice *render_device =
+             META_RENDER_DEVICE (render_device_gbm);
+ 
++          if (gpu_poc_drm_only (render_device))
++            return META_RENDER_DEVICE (g_steal_pointer (&render_device_gbm));
++
+           if (meta_render_device_is_hardware_accelerated (render_device))
+             return META_RENDER_DEVICE (g_steal_pointer (&render_device_gbm));
+         }
+--- a/src/backends/native/meta-cursor-renderer-native.c
++++ b/src/backends/native/meta-cursor-renderer-native.c
+@@ -22,6 +22,7 @@
+  */
+ 
+ #include "config.h"
++#include "backends/native/meta-gpu-drm-only-poc.h"
+ 
+ #include "backends/native/meta-cursor-renderer-native.h"
+ 
+@@ -372,6 +373,9 @@
+   MetaKms *kms = meta_backend_native_get_kms (backend_native);
+   MetaKmsCursorManager *kms_cursor_manager = meta_kms_get_cursor_manager (kms);
+   gboolean cursor_changed, cursor_hw_managed = FALSE;
++  gboolean per_view_overlay = gpu_release_poc_enabled () &&
++    g_getenv ("MUTTER_GPU_RELEASE_POC_DRM_ONLY_PCI") != NULL;
++  gboolean any_software_view = FALSE;
+   GList *views;
+   GList *l;
+ 
+@@ -451,6 +455,21 @@
+         {
+           cursor_stage_view->has_hw_cursor = has_hw_cursor;
+ 
++          /* Normal view painting, cursor damage and direct scanout all
++           * respect this existing per-view overlay inhibition. */
++          if (per_view_overlay)
++            {
++              if (has_hw_cursor)
++                meta_stage_view_inhibit_cursor_overlay (view);
++              else
++                {
++                  meta_stage_view_uninhibit_cursor_overlay (view);
++                  cursor_stage_view->needs_emit_painted = FALSE;
++                }
++              g_object_set_data (G_OBJECT (view), GPU_POC_HW_CURSOR_VIEW_KEY,
++                                 GINT_TO_POINTER (has_hw_cursor));
++            }
++
+           if (!has_hw_cursor)
+             {
+               MetaCrtcKms *crtc_kms = META_CRTC_KMS (crtc);
+@@ -465,6 +484,7 @@
+         }
+ 
+       cursor_hw_managed |= cursor_stage_view->has_hw_cursor;
++      any_software_view |= !cursor_stage_view->has_hw_cursor;
+     }
+ 
+   if (cursor_changed)
+@@ -489,7 +509,7 @@
+   maybe_schedule_cursor_sprite_animation_frame (native, cursor,
+                                                 cursor_changed);
+ 
+-  return (!cursor_hw_managed &&
++  return ((per_view_overlay ? any_software_view : !cursor_hw_managed) &&
+           cursor &&
+           clutter_cursor_get_texture (cursor, NULL, NULL));
+ }
+@@ -1401,6 +1421,12 @@
+ 
+   cursor_renderer_gpu_data =
+     meta_create_cursor_renderer_native_gpu_data (gpu_kms);
++  if (gpu_poc_drm_only_path (meta_kms_device_get_path (kms_device)))
++    {
++      cursor_renderer_gpu_data->hw_cursor_broken = TRUE;
++      GPU_POC_LOG ("event=drm-only-software-cursor path=%s", meta_kms_device_get_path (kms_device));
++      return;
++    }
+ 
+   gbm_device = meta_gbm_device_from_gpu (gpu_kms);
+   format_info = find_cursor_format_info (gpu_kms, gbm_device);
+@@ -1438,6 +1464,9 @@
+ 
+   cursor_renderer_gpu_data->cursor_width = width;
+   cursor_renderer_gpu_data->cursor_height = height;
++  if (gpu_release_poc_enabled () && g_getenv ("MUTTER_GPU_RELEASE_POC_DRM_ONLY_PCI"))
++    GPU_POC_LOG ("event=drm-only-hardware-cursor-available path=%s",
++                 meta_kms_device_get_path (kms_device));
+ }
+ 
+ static void
+--- a/src/backends/native/meta-device-pool.c
++++ b/src/backends/native/meta-device-pool.c
+@@ -16,6 +16,7 @@
+  */
+ 
+ #include "config.h"
++#include "backends/native/meta-gpu-release-poc.h"
+ 
+ #include "backends/native/meta-device-pool-private.h"
+ 
+@@ -37,6 +38,7 @@
+   MetaDevicePool *pool;
+ 
+   grefcount ref_count;
++  guint poc_refs;
+ 
+   char *path;
+   int major;
+@@ -79,12 +81,15 @@
+ 
+   file->pool = pool;
+   g_ref_count_init (&file->ref_count);
++  file->poc_refs = 1;
+ 
+   file->path = g_strdup (path);
+   file->major = major;
+   file->minor = minor;
+   file->fd = fd;
+   file->flags = flags;
++  if (gpu_release_poc_trace_device (path))
++    GPU_POC_LOG ("event=device-open path=%s fd=%d refs=%u", path, fd, file->poc_refs);
+ 
+   return file;
+ }
+@@ -130,6 +135,10 @@
+ meta_device_file_acquire_locked (MetaDeviceFile *file)
+ {
+   g_ref_count_inc (&file->ref_count);
++  file->poc_refs++;
++  if (gpu_release_poc_trace_device (file->path))
++    GPU_POC_LOG ("event=device-acquire path=%s fd=%d refs=%u",
++                 file->path, file->fd, file->poc_refs);
+   return file;
+ }
+ 
+@@ -315,6 +324,10 @@
+ 
+   meta_topic (META_DEBUG_BACKEND, "Releasing device file '%s'", file->path);
+ 
++  file->poc_refs--;
++  if (gpu_release_poc_trace_device (file->path))
++    GPU_POC_LOG ("event=device-release path=%s fd=%d refs=%u",
++                 file->path, file->fd, file->poc_refs);
+   if (!g_ref_count_dec (&file->ref_count))
+     return;
+ 
+@@ -348,6 +361,8 @@
+     }
+ 
+   close (file->fd);
++  if (gpu_release_poc_trace_device (file->path))
++    GPU_POC_LOG ("event=device-close-returned path=%s fd=%d", file->path, file->fd);
+ 
+   meta_device_file_free (file);
+ }
+--- a/src/backends/native/meta-drm-lease.c
++++ b/src/backends/native/meta-drm-lease.c
+@@ -16,6 +16,7 @@
+  */
+ 
+ #include "config.h"
++#include "backends/native/meta-gpu-drm-only-poc.h"
+ 
+ #include "backends/native/meta-drm-lease.h"
+ 
+@@ -626,14 +627,26 @@
+   MetaKms *kms =
+     meta_backend_native_get_kms (META_BACKEND_NATIVE (lease_manager->backend));
+   g_autoptr (GList) added_devices = NULL;
+-  GList *new_devices;
+-  GList *l;
+-
+-  new_devices = g_list_copy (meta_kms_get_devices (kms));
+-
+-  for (l = new_devices; l; l = l->next)
++  GList *new_devices = NULL;
++  GList *l;
++
++  for (l = meta_kms_get_devices (kms); l; l = l->next)
+     {
+       MetaKmsDevice *kms_device = l->data;
++      const char *path = meta_kms_device_get_path (kms_device);
++
++      /* Binding the lease global hands clients a persistent card fd,
++       * even when no connector is available for leasing. */
++      if (g_object_get_data (G_OBJECT (kms_device), GPU_POC_DRM_ONLY_KEY))
++        continue;
++      if (gpu_poc_drm_only_path (path))
++        {
++          g_object_set_data (G_OBJECT (kms_device), GPU_POC_DRM_ONLY_KEY,
++                             GINT_TO_POINTER (1));
++          GPU_POC_LOG ("event=drm-only-lease-device-skipped path=%s", path);
++          continue;
++        }
++      new_devices = g_list_prepend (new_devices, kms_device);
+ 
+       if (g_list_find (lease_manager->devices, kms_device))
+         {
+@@ -648,7 +661,7 @@
+ 
+   *removed_devices_out = g_steal_pointer (&lease_manager->devices);
+   *added_devices_out = g_steal_pointer (&added_devices);
+-  lease_manager->devices = new_devices;
++  lease_manager->devices = g_list_reverse (new_devices);
+ }
+ 
+ static void
+@@ -657,8 +670,6 @@
+                    GList               **removed_connectors_out,
+                    GList               **leases_to_revoke_out)
+ {
+-  MetaKms *kms =
+-    meta_backend_native_get_kms (META_BACKEND_NATIVE (lease_manager->backend));
+   GList *new_connectors = NULL;
+   GHashTable *new_leased_connectors;
+   MetaDrmLease *lease = NULL;
+@@ -676,7 +687,7 @@
+   if (lease_manager->is_paused)
+     goto scanned_resources;
+ 
+-  for (l = meta_kms_get_devices (kms); l; l = l->next)
++  for (l = lease_manager->devices; l; l = l->next)
+     {
+       MetaKmsDevice *kms_device = l->data;
+ 
+--- /dev/null
++++ b/src/backends/native/meta-gpu-drm-only-poc.h
+@@ -0,0 +1,56 @@
++/* SPDX-License-Identifier: GPL-2.0-or-later */
++#pragma once
++#include <glib-object.h>
++#include "meta-gpu-release-poc.h"
++
++#define GPU_POC_DRM_ONLY_KEY "gpu-release-poc-drm-only"
++#define GPU_POC_HW_CURSOR_VIEW_KEY "gpu-release-poc-hw-cursor-view"
++
++static inline gboolean
++gpu_poc_drm_policy_matches (const char *requested,
++                            const char *actual,
++                            const char *vendor,
++                            const char *boot_vga,
++                            const char *removable)
++{
++  return gpu_release_poc_enabled () && requested &&
++    g_regex_match_simple ("^[0-9a-f]{4}:[0-9a-f]{2}:[0-9a-f]{2}\\.[0-7]$", requested, 0, 0) &&
++    g_strcmp0 (requested, actual) == 0 &&
++    g_strcmp0 (vendor, "0x10de\n") == 0 &&
++    g_strcmp0 (boot_vga, "0\n") == 0 &&
++    g_strcmp0 (removable, "removable\n") == 0;
++}
++
++static inline gboolean
++gpu_poc_drm_only_path (const char *path)
++{
++  const char *requested = g_getenv ("MUTTER_GPU_RELEASE_POC_DRM_ONLY_PCI");
++  g_autofree char *name = NULL, *base = NULL, *link = NULL, *actual = NULL;
++  g_autofree char *vendor = NULL, *boot = NULL, *removable = NULL;
++  g_autofree char *vendor_path = NULL, *boot_path = NULL, *removable_path = NULL;
++
++  if (!gpu_release_poc_enabled () || !requested || !path)
++    return FALSE;
++  name = g_path_get_basename (path);
++  if (!g_regex_match_simple ("^(card[0-9]+|renderD[0-9]+)$", name, 0, 0))
++    return FALSE;
++  base = g_build_filename ("/sys/class/drm", name, "device", NULL);
++  link = g_file_read_link (base, NULL);
++  if (!link)
++    return FALSE;
++  actual = g_path_get_basename (link);
++  vendor_path = g_build_filename (base, "vendor", NULL);
++  boot_path = g_build_filename (base, "boot_vga", NULL);
++  removable_path = g_build_filename (base, "removable", NULL);
++  if (!g_file_get_contents (vendor_path, &vendor, NULL, NULL) ||
++      !g_file_get_contents (boot_path, &boot, NULL, NULL) ||
++      !g_file_get_contents (removable_path, &removable, NULL, NULL))
++    return FALSE;
++  return gpu_poc_drm_policy_matches (requested, actual, vendor, boot, removable);
++}
++
++static inline gboolean
++gpu_poc_drm_only (gpointer object)
++{
++  return object && g_object_get_data (G_OBJECT (object), GPU_POC_DRM_ONLY_KEY) != NULL;
++}
+--- /dev/null
++++ b/src/backends/native/meta-gpu-release-poc.h
+@@ -0,0 +1,69 @@
++/* SPDX-License-Identifier: GPL-2.0-or-later */
++#pragma once
++
++#include <glib.h>
++#include <errno.h>
++
++static inline gboolean
++gpu_release_poc_enabled (void)
++{
++  return g_strcmp0 (g_getenv ("MUTTER_GPU_RELEASE_POC"), "1") == 0;
++}
++
++static inline gboolean
++gpu_release_poc_trace_device (const char *path)
++{
++  const char *filter = g_getenv ("MUTTER_GPU_RELEASE_POC_TRACE_DEVICE");
++
++  return gpu_release_poc_enabled () && filter &&
++    g_strcmp0 (filter, path) == 0;
++}
++
++#define GPU_POC_LOG(...) G_STMT_START { \
++  if (gpu_release_poc_enabled ()) \
++    g_message ("GPU-RELEASE-POC " __VA_ARGS__); \
++} G_STMT_END
++
++/* Low-frequency lifecycle boundaries only; never called from frame dispatch.
++ * These are non-atomic observations. fd numbers can be reused or changed by
++ * another thread; they are evidence, not ownership or safe-eject decisions.
++ */
++static inline void
++gpu_release_poc_fds (const char *stage,
++                     const void *object)
++{
++  int saved_errno;
++  g_autoptr (GDir) directory = NULL;
++  const char *name;
++  guint scanned = 0, matched = 0;
++
++  if (!gpu_release_poc_enabled () ||
++      g_strcmp0 (g_getenv ("MUTTER_GPU_RELEASE_POC_TRACE_FDS"), "1") != 0)
++    return;
++  saved_errno = errno;
++  directory = g_dir_open ("/proc/self/fd", 0, NULL);
++  if (!directory)
++    {
++      GPU_POC_LOG ("event=fd-snapshot-unavailable stage=%s object=%p", stage, object);
++      errno = saved_errno;
++      return;
++    }
++  while ((name = g_dir_read_name (directory)) && scanned < 4096)
++    {
++      g_autofree char *path = g_build_filename ("/proc/self/fd", name, NULL);
++      g_autofree char *target = g_file_read_link (path, NULL);
++
++      scanned++;
++      if (target && (g_str_has_prefix (target, "/dev/nvidia") ||
++                     g_str_has_prefix (target, "/dev/dri/")))
++        {
++          matched++;
++          GPU_POC_LOG ("event=fd-snapshot stage=%s object=%p thread=%p time_us=%" G_GINT64_FORMAT " fd=%s node=%s",
++                       stage, object, g_thread_self (), g_get_monotonic_time (), name, target);
++        }
++    }
++  GPU_POC_LOG ("event=fd-snapshot-end stage=%s object=%p matched=%u truncated=%d",
++               stage, object, matched, name != NULL);
++  g_clear_pointer (&directory, g_dir_close);
++  errno = saved_errno;
++}
+--- a/src/backends/native/meta-kms-impl-device.c
++++ b/src/backends/native/meta-kms-impl-device.c
+@@ -16,6 +16,7 @@
+  */
+ 
+ #include "config.h"
++#include "backends/native/meta-gpu-release-poc.h"
+ 
+ #include "backends/native/meta-kms-impl-device.h"
+ 
+@@ -321,6 +322,8 @@
+     return FALSE;
+ 
+   priv->device_file = device_file;
++  if (gpu_release_poc_trace_device (priv->path))
++    GPU_POC_LOG ("event=kms-reopen path=%s", priv->path);
+ 
+   if (!(priv->flags & META_KMS_DEVICE_FLAG_NO_MODE_SETTING))
+     {
+@@ -2432,6 +2435,8 @@
+ #endif
+ 
+   priv->fd_hold_count++;
++  if (gpu_release_poc_trace_device (priv->path))
++    GPU_POC_LOG ("event=kms-hold path=%s holds=%d", priv->path, priv->fd_hold_count);
+ }
+ 
+ static void
+@@ -2461,6 +2466,8 @@
+   g_return_if_fail (priv->fd_hold_count > 0);
+ 
+   priv->fd_hold_count--;
++  if (gpu_release_poc_trace_device (priv->path))
++    GPU_POC_LOG ("event=kms-unhold path=%s holds=%d", priv->path, priv->fd_hold_count);
+   if (priv->fd_hold_count == 0)
+     {
+       g_clear_pointer (&priv->device_file, meta_device_file_release);
+--- a/src/backends/native/meta-onscreen-native.c
++++ b/src/backends/native/meta-onscreen-native.c
+@@ -26,6 +26,7 @@
+  */
+ 
+ #include "config.h"
++#include "backends/native/meta-gpu-drm-only-poc.h"
+ 
+ #include "backends/native/meta-onscreen-native.h"
+ 
+@@ -2211,6 +2212,17 @@
+   MetaRendererNative *renderer_native = renderer_gpu_data->renderer_native;
+   ClutterFrame *frame = user_data;
+   MetaFrameNative *frame_native = meta_frame_native_from_frame (frame);
++
++  {
++    MetaGpuKms *output_gpu = META_GPU_KMS (meta_crtc_get_gpu (onscreen_native->crtc));
++    MetaRendererNativeGpuData *output_data = meta_renderer_native_get_gpu_data (renderer_native, output_gpu);
++    if (output_data && gpu_poc_drm_only (output_data->render_device))
++      {
++        g_set_error (error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
++                     "DRM-only output requires compositing and CPU copy");
++        return FALSE;
++      }
++  }
+ 
+   renderer_gpu_data = meta_renderer_native_get_gpu_data (renderer_native,
+                                                          render_gpu);
+@@ -3367,6 +3379,9 @@
+     META_SHARED_FRAMEBUFFER_IMPORT_STATUS_NONE;
+ 
+   onscreen_native->secondary_gpu_state = secondary_gpu_state;
++  if (gpu_poc_drm_only (render_device))
++    GPU_POC_LOG ("event=drm-only-output-allocated path=%s width=%d height=%d format=0x%x",
++                 meta_render_device_get_name (render_device), width, height, drm_format);
+ 
+   return TRUE;
+ }
+--- a/src/backends/native/meta-render-device-gbm.c
++++ b/src/backends/native/meta-render-device-gbm.c
+@@ -18,6 +18,8 @@
+  */
+ 
+ #include "config.h"
++#include "backends/native/meta-gpu-drm-only-poc.h"
++#include "backends/native/meta-gpu-release-poc.h"
+ 
+ #include "backends/native/meta-render-device-gbm.h"
+ 
+@@ -55,7 +57,11 @@
+     meta_render_device_get_device_file (render_device);
+   struct gbm_device *gbm_device;
+ 
++  gpu_release_poc_fds ("gbm-create-before", render_device);
+   gbm_device = gbm_create_device (meta_device_file_get_fd (device_file));
++  GPU_POC_LOG ("event=gbm-create object=%p path=%s fd=%d gbm=%p",
++    render_device, meta_device_file_get_path (device_file), meta_device_file_get_fd (device_file), gbm_device);
++  gpu_release_poc_fds ("gbm-create-after", gbm_device);
+   if (!gbm_device)
+     {
+       g_set_error (error, G_IO_ERROR, G_IO_ERROR_FAILED,
+@@ -64,6 +70,11 @@
+     }
+ 
+   render_device_gbm->gbm_device = gbm_device;
++  if (gpu_poc_drm_only_path (meta_device_file_get_path (device_file)))
++    {
++      g_object_set_data (G_OBJECT (render_device), GPU_POC_DRM_ONLY_KEY, GINT_TO_POINTER (1));
++      GPU_POC_LOG ("event=drm-only-device path=%s", meta_device_file_get_path (device_file));
++    }
+ 
+   return initable_parent_iface->init (initable, cancellable, error);
+ }
+@@ -86,6 +97,13 @@
+   MetaDeviceFile *device_file;
+   MetaDrmBufferGbm *buffer_gbm;
+   MetaDrmBufferImport *buffer_import;
++
++  if (gpu_poc_drm_only (render_device))
++    {
++      g_set_error (error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
++                   "DRM-only PoC forbids NVIDIA EGL, GBM imports and GPU allocation");
++      return NULL;
++    }
+ 
+   if (!META_IS_DRM_BUFFER_GBM (buffer))
+     {
+@@ -120,6 +138,13 @@
+   EGLint n_modifiers;
+   g_autoptr (GArray) modifiers = NULL;
+   g_autoptr (GArray) external_onlys = NULL;
++
++  if (gpu_poc_drm_only (render_device))
++    {
++      g_set_error (error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
++                   "DRM-only PoC forbids NVIDIA EGL, GBM imports and GPU allocation");
++      return NULL;
++    }
+ 
+   egl_display = meta_render_device_get_egl_display (render_device);
+ 
+@@ -215,6 +240,13 @@
+   MetaEgl *egl = meta_backend_get_egl (backend);
+   EGLDisplay egl_display;
+ 
++  if (gpu_poc_drm_only (render_device))
++    {
++      g_set_error (error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
++                   "DRM-only PoC forbids NVIDIA EGL, GBM imports and GPU allocation");
++      return EGL_NO_DISPLAY;
++    }
++
+   if (!meta_egl_has_extensions (egl, EGL_NO_DISPLAY, NULL,
+                                 "EGL_MESA_platform_gbm",
+                                 NULL) &&
+@@ -260,6 +292,12 @@
+   struct gbm_bo *gbm_bo;
+   MetaDrmBufferGbm *buffer_gbm;
+ 
++  if (gpu_poc_drm_only (render_device))
++    {
++      g_set_error (error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
++                   "DRM-only PoC forbids NVIDIA GPU allocation");
++      return NULL;
++    }
+   if (n_modifiers == 0)
+     {
+       gbm_bo = gbm_bo_create (render_device_gbm->gbm_device,
+@@ -293,7 +331,11 @@
+ {
+   MetaRenderDeviceGbm *render_device_gbm = META_RENDER_DEVICE_GBM (object);
+ 
++  GPU_POC_LOG ("event=gbm-destroy-begin device=%p", render_device_gbm->gbm_device);
++  gpu_release_poc_fds ("gbm-destroy-before", render_device_gbm->gbm_device);
+   g_clear_pointer (&render_device_gbm->gbm_device, gbm_device_destroy);
++  gpu_release_poc_fds ("gbm-destroy-after", render_device_gbm);
++  GPU_POC_LOG ("event=gbm-destroy-returned");
+ 
+   G_OBJECT_CLASS (meta_render_device_gbm_parent_class)->finalize (object);
+ }
+--- a/src/backends/native/meta-render-device.c
++++ b/src/backends/native/meta-render-device.c
+@@ -17,6 +17,7 @@
+  */
+ 
+ #include "config.h"
++#include "backends/native/meta-gpu-release-poc.h"
+ 
+ #include "backends/native/meta-render-device-private.h"
+ 
+@@ -146,6 +147,9 @@
+       return;
+     }
+ 
++  GPU_POC_LOG ("event=render-device-display object=%p type=%s path=%s display=%p",
++    render_device, G_OBJECT_TYPE_NAME (render_device),
++    priv->device_file ? meta_device_file_get_path (priv->device_file) : "none", egl_display);
+   priv->egl_display = egl_display;
+   detect_hardware_rendering (render_device);
+ }
+@@ -224,9 +228,13 @@
+     meta_render_device_get_instance_private (render_device);
+   MetaEgl *egl = meta_backend_get_egl (priv->backend);
+ 
++  GPU_POC_LOG ("event=render-device-dispose path=%s",
++    priv->device_file ? meta_device_file_get_path (priv->device_file) : "none");
+   if (priv->egl_display != EGL_NO_DISPLAY)
+     {
++      GPU_POC_LOG ("event=egl-terminate-begin display=%p", priv->egl_display);
+       meta_egl_terminate (egl, priv->egl_display, NULL);
++      GPU_POC_LOG ("event=egl-terminate-returned display=%p", priv->egl_display);
+       priv->egl_display = EGL_NO_DISPLAY;
+     }
+ 
+@@ -240,6 +248,8 @@
+   MetaRenderDevicePrivate *priv =
+     meta_render_device_get_instance_private (render_device);
+ 
++  GPU_POC_LOG ("event=render-device-finalize path=%s",
++    priv->device_file ? meta_device_file_get_path (priv->device_file) : "none");
+   g_clear_pointer (&priv->device_file, meta_device_file_release);
+ 
+   G_OBJECT_CLASS (meta_render_device_parent_class)->finalize (object);
+--- /dev/null
++++ b/src/backends/native/meta-renderer-native-poc.inc
+@@ -0,0 +1,274 @@
++/* SPDX-License-Identifier: GPL-2.0-or-later
++ * Included by meta-renderer-native.c, after the normal unused-GPU predicate.
++ * Opt-in research interface. It never removes a PCI device or kills clients.
++ */
++#define GPU_POC_BUS "org.gnome.Mutter.GpuReleasePoC"
++#define GPU_POC_PATH "/org/gnome/Mutter/GpuReleasePoC"
++#define GPU_POC_IFACE "org.gnome.Mutter.GpuReleasePoC1"
++
++static const char gpu_poc_xml[] =
++  "<node><interface name='" GPU_POC_IFACE "'>"
++  "<method name='Inspect'><arg type='s' direction='in'/>"
++  "<arg type='a{sv}' direction='out'/></method>"
++  "<method name='Reclaim'><arg type='s' direction='in'/>"
++  "<arg type='a{sv}' direction='out'/></method>"
++  "</interface></node>";
++
++static MetaGpuKms *
++gpu_poc_find (MetaRendererNative *native,
++              const char         *path)
++{
++  MetaBackend *backend = meta_renderer_get_backend (META_RENDERER (native));
++  GList *l;
++
++  for (l = meta_backend_get_gpus (backend); l; l = l->next)
++    if (META_IS_GPU_KMS (l->data) &&
++        g_strcmp0 (meta_gpu_kms_get_file_path (l->data), path) == 0)
++      return l->data;
++  return NULL;
++}
++
++static const char *
++gpu_poc_reject_reason (MetaRendererNative *native,
++                       MetaGpuKms         *gpu)
++{
++  MetaRenderer *renderer = META_RENDERER (native);
++  MetaKmsDevice *device;
++  gboolean primary_view = FALSE;
++  GList *l;
++
++  if (!gpu || !native->primary_gpu_kms)
++    return "unknown GPU or no native primary GPU";
++  if (gpu == native->primary_gpu_kms)
++    return "primary GPU must never be reclaimed";
++  if (g_strcmp0 (meta_kms_device_get_driver_name (
++        meta_gpu_kms_get_kms_device (native->primary_gpu_kms)), "amdgpu") != 0)
++    return "PoC requires an AMD primary GPU";
++  device = meta_gpu_kms_get_kms_device (gpu);
++  if (g_strcmp0 (meta_kms_device_get_driver_name (device), "nvidia-drm") != 0)
++    return "PoC accepts only an NVIDIA DRM secondary GPU";
++  if (!meta_backend_get_launcher (meta_renderer_get_backend (renderer)) ||
++      !meta_launcher_is_session_active (meta_backend_get_launcher (
++        meta_renderer_get_backend (renderer))))
++    return "no active native logind session; run the PoC on the active desktop";
++  if (native->pending_mode_set || native->pending_mode_set_views ||
++      g_hash_table_size (native->mode_set_updates) != 0)
++    return "mode set work is pending";
++  if (native->detached_onscreens || native->lingering_onscreens ||
++      native->power_save_page_flip_onscreens)
++    return "onscreen or power-save page-flip resources remain";
++  for (l = meta_renderer_get_views (renderer); l; l = l->next)
++    {
++      MetaCrtc *crtc = meta_renderer_view_get_crtc (l->data);
++      MetaGpu *view_gpu = crtc ? meta_crtc_get_gpu (crtc) : NULL;
++
++      if (view_gpu == META_GPU (gpu))
++        return "a current view uses the target GPU";
++      if (view_gpu == META_GPU (native->primary_gpu_kms))
++        primary_view = TRUE;
++    }
++  if (!primary_view)
++    return "no current view on the AMD primary GPU";
++  for (l = meta_kms_device_get_connectors (device); l; l = l->next)
++    {
++      const MetaKmsConnectorState *state =
++        meta_kms_connector_get_current_state (l->data);
++
++      if (state)
++        return "target has a connected KMS connector state";
++    }
++  for (l = meta_kms_device_get_crtcs (device); l; l = l->next)
++    if (meta_kms_crtc_is_active (l->data))
++      return "target CRTC is active";
++  return NULL;
++}
++
++static void
++gpu_poc_add_string (GVariantBuilder *builder,
++                    const char      *key,
++                    const char      *value)
++{
++  g_variant_builder_add (builder, "{sv}", key,
++                        g_variant_new_string (value ? value : ""));
++}
++
++static GVariant *
++gpu_poc_snapshot (MetaRendererNative *native,
++                  const char         *path,
++                  const char         *outcome,
++                  gboolean            cache_before,
++                  gboolean            finalized)
++{
++  GVariantBuilder result;
++  MetaGpuKms *gpu = gpu_poc_find (native, path);
++  const char *reason = gpu_poc_reject_reason (native, gpu);
++  const char *primary_path = native->primary_gpu_kms ?
++    meta_gpu_kms_get_file_path (native->primary_gpu_kms) : "";
++
++  g_variant_builder_init (&result, G_VARIANT_TYPE_VARDICT);
++  gpu_poc_add_string (&result, "target", path);
++  gpu_poc_add_string (&result, "primary", primary_path);
++  gpu_poc_add_string (&result, "primary_driver", native->primary_gpu_kms ?
++    meta_kms_device_get_driver_name (meta_gpu_kms_get_kms_device (native->primary_gpu_kms)) : "");
++  gpu_poc_add_string (&result, "reason", reason);
++  gpu_poc_add_string (&result, "outcome", outcome);
++  g_variant_builder_add (&result, "{sv}", "eligible", g_variant_new_boolean (!reason));
++  g_variant_builder_add (&result, "{sv}", "cache_before", g_variant_new_boolean (cache_before));
++  g_variant_builder_add (&result, "{sv}", "cache_present", g_variant_new_boolean (
++    gpu && g_hash_table_contains (native->gpu_datas, gpu)));
++  g_variant_builder_add (&result, "{sv}", "render_device_finalized", g_variant_new_boolean (finalized));
++  g_variant_builder_add (&result, "{sv}", "view_count", g_variant_new_uint32 (
++    g_list_length (meta_renderer_get_views (META_RENDERER (native)))));
++  g_variant_builder_add (&result, "{sv}", "lingering_count", g_variant_new_uint32 (
++    g_list_length (native->lingering_onscreens)));
++  return g_variant_new ("(a{sv})", &result);
++}
++
++static gboolean
++gpu_poc_reclaim_idle (gpointer data)
++{
++  MetaRendererNative *native = data;
++  MetaGpuKms *gpu = gpu_poc_find (native, native->poc_device);
++  const char *reason = gpu_poc_reject_reason (native, gpu);
++  gboolean had_cache = gpu && g_hash_table_contains (native->gpu_datas, gpu);
++  gboolean finalized = FALSE;
++  const char *outcome = "rejected";
++
++  native->poc_idle_id = 0;
++  if (!reason && had_cache)
++    {
++      MetaBackend *backend = meta_renderer_get_backend (META_RENDERER (native));
++      ClutterBackend *clutter_backend = meta_backend_get_clutter_backend (backend);
++      CoglContext *context = clutter_backend_get_cogl_context (clutter_backend);
++      CoglDisplay *display = cogl_context_get_display (context);
++      MetaRendererNativeGpuData *gpu_data = g_hash_table_lookup (native->gpu_datas, gpu);
++      MetaRenderDevice *weak_device = gpu_data->render_device;
++
++      if (!_cogl_winsys_egl_ensure_current (display))
++        reason = "cannot make the primary EGL context current";
++      else
++        {
++          GPU_POC_LOG ("event=reclaim-begin path=%s", native->poc_device);
++          g_object_add_weak_pointer (G_OBJECT (weak_device), (gpointer *) &weak_device);
++          /* Same value destructor used by free_unused_gpu_datas(), target only.
++           * Guards are re-evaluated here, at an idle outside frame dispatch.
++           */
++          g_hash_table_remove (native->gpu_datas, gpu);
++          finalized = weak_device == NULL;
++          if (weak_device)
++            g_object_remove_weak_pointer (G_OBJECT (weak_device), (gpointer *) &weak_device);
++          outcome = "cache-reclaimed-not-a-gpu-eject";
++          if (!_cogl_winsys_egl_ensure_current (display))
++            outcome = "cache-reclaimed-primary-context-restore-failed";
++          GPU_POC_LOG ("event=reclaim-end path=%s finalized=%d outcome=%s",
++                       native->poc_device, finalized, outcome);
++        }
++    }
++  else if (!reason)
++    outcome = "cache-already-absent-no-mutation";
++
++  if (reason)
++    GPU_POC_LOG ("event=reclaim-rejected path=%s reason=%s", native->poc_device, reason);
++  g_dbus_method_invocation_return_value (native->poc_request,
++    gpu_poc_snapshot (native, native->poc_device, reason ? reason : outcome, had_cache, finalized));
++  g_clear_object (&native->poc_request);
++  g_clear_pointer (&native->poc_device, g_free);
++  return G_SOURCE_REMOVE;
++}
++
++static void
++gpu_poc_method_call (GDBusConnection       *connection,
++                     const char            *sender,
++                     const char            *path,
++                     const char            *interface,
++                     const char            *method,
++                     GVariant              *parameters,
++                     GDBusMethodInvocation *invocation,
++                     gpointer               data)
++{
++  MetaRendererNative *native = data;
++  const char *device;
++
++  g_variant_get (parameters, "(&s)", &device);
++  if (strlen (device) > 128)
++    {
++      g_dbus_method_invocation_return_error (invocation, G_IO_ERROR,
++                                            G_IO_ERROR_INVALID_ARGUMENT, "device path too long");
++      return;
++    }
++  if (g_str_equal (method, "Inspect"))
++    {
++      g_dbus_method_invocation_return_value (invocation,
++        gpu_poc_snapshot (native, device, "inspect-only", FALSE, FALSE));
++      return;
++    }
++  if (!g_str_equal (method, "Reclaim") || native->poc_request)
++    {
++      g_dbus_method_invocation_return_error (invocation, G_IO_ERROR,
++                                            G_IO_ERROR_BUSY, "unsupported request or PoC busy");
++      return;
++    }
++  native->poc_request = g_object_ref (invocation);
++  native->poc_device = g_strdup (device);
++  native->poc_idle_id = g_idle_add_full (G_PRIORITY_DEFAULT_IDLE,
++                                       gpu_poc_reclaim_idle, native, NULL);
++}
++
++static const GDBusInterfaceVTable gpu_poc_vtable = {
++  .method_call = gpu_poc_method_call,
++};
++
++static void
++gpu_poc_bus_acquired (GDBusConnection *connection,
++                      const char      *name,
++                      gpointer         data)
++{
++  MetaRendererNative *native = data;
++  g_autoptr (GDBusNodeInfo) node = NULL;
++  g_autoptr (GError) error = NULL;
++
++  node = g_dbus_node_info_new_for_xml (gpu_poc_xml, &error);
++  if (node)
++    native->poc_registration_id = g_dbus_connection_register_object (
++      connection, GPU_POC_PATH, node->interfaces[0], &gpu_poc_vtable, native, NULL, &error);
++  if (error)
++    GPU_POC_LOG ("event=interface-error message=%s", error->message);
++  else
++    {
++      native->poc_connection = g_object_ref (connection);
++      GPU_POC_LOG ("event=interface-ready version=1 primary=%s",
++        native->primary_gpu_kms ? meta_gpu_kms_get_file_path (native->primary_gpu_kms) : "none");
++    }
++}
++
++static void
++gpu_poc_start (MetaRendererNative *native)
++{
++  if (gpu_release_poc_enabled ())
++    native->poc_name_id = g_bus_own_name (G_BUS_TYPE_SESSION, GPU_POC_BUS,
++      G_BUS_NAME_OWNER_FLAGS_NONE, gpu_poc_bus_acquired, NULL, NULL, native, NULL);
++}
++
++static void
++gpu_poc_stop (MetaRendererNative *native)
++{
++  g_clear_handle_id (&native->poc_idle_id, g_source_remove);
++  if (native->poc_request)
++    {
++      g_dbus_method_invocation_return_error (native->poc_request, G_IO_ERROR,
++                                            G_IO_ERROR_CANCELLED, "renderer shutting down");
++      g_clear_object (&native->poc_request);
++    }
++  if (native->poc_registration_id)
++    {
++      g_dbus_connection_unregister_object (native->poc_connection, native->poc_registration_id);
++      native->poc_registration_id = 0;
++    }
++  if (native->poc_name_id)
++    {
++      g_bus_unown_name (native->poc_name_id);
++      native->poc_name_id = 0;
++    }
++  g_clear_object (&native->poc_connection);
++  g_clear_pointer (&native->poc_device, g_free);
++}
+--- a/src/backends/native/meta-renderer-native.c
++++ b/src/backends/native/meta-renderer-native.c
+@@ -36,6 +36,8 @@
+  */
+ 
+ #include "config.h"
++#include "backends/native/meta-gpu-drm-only-poc.h"
++#include "backends/native/meta-gpu-release-poc.h"
+ 
+ #include <drm_fourcc.h>
+ #include <errno.h>
+@@ -47,6 +49,9 @@
+ #include <unistd.h>
+ 
+ #include "backends/meta-color-device.h"
++#include "backends/meta-backend-private.h"
++#include "backends/meta-launcher.h"
++#include "backends/native/meta-kms-connector.h"
+ #include "backends/meta-color-manager.h"
+ #include "backends/meta-cursor-tracker-private.h"
+ #include "backends/meta-gles3.h"
+@@ -97,6 +102,13 @@
+ 
+   GHashTable *gpu_datas;
+ 
++  GDBusConnection *poc_connection;
++  GDBusMethodInvocation *poc_request;
++  char *poc_device;
++  guint poc_name_id;
++  guint poc_registration_id;
++  guint poc_idle_id;
++
+   GList *pending_mode_set_views;
+   gboolean pending_mode_set;
+ 
+@@ -155,6 +167,9 @@
+ {
+   MetaGpuKms *gpu_kms = renderer_gpu_data->gpu_kms;
+ 
++  GPU_POC_LOG ("event=gpu-data-free path=%s", gpu_kms ?
++    meta_gpu_kms_get_file_path (gpu_kms) : "surfaceless");
++
+   if (renderer_gpu_data->secondary.egl_context != EGL_NO_CONTEXT)
+     {
+       MetaRenderDevice *render_device = renderer_gpu_data->render_device;
+@@ -207,6 +222,8 @@
+ 
+   renderer_gpu_data = meta_renderer_native_get_gpu_data (renderer_native,
+                                                          gpu_kms);
++  if (!renderer_gpu_data || gpu_poc_drm_only (renderer_gpu_data->render_device))
++    return NULL;
+   render_device = renderer_gpu_data->render_device;
+ 
+   if (!META_IS_RENDER_DEVICE_GBM (render_device))
+@@ -829,6 +846,9 @@
+ {
+   GHashTable *used_gpus = user_data;
+ 
++  GPU_POC_LOG ("event=normal-cache-decision path=%s retained=%d",
++    key ? meta_gpu_kms_get_file_path (key) : "surfaceless",
++    g_hash_table_contains (used_gpus, key));
+   return !g_hash_table_contains (used_gpus, key);
+ }
+ 
+@@ -863,10 +883,16 @@
+       g_hash_table_add (used_gpus, meta_crtc_get_gpu (crtc));
+     }
+ 
++  GPU_POC_LOG ("event=normal-cache-pass views=%u lingering=%u detached=%u pending=%d",
++    g_list_length (meta_renderer_get_views (renderer)),
++    g_list_length (renderer_native->lingering_onscreens),
++    g_list_length (renderer_native->detached_onscreens), renderer_native->pending_mode_set);
+   g_hash_table_foreach_remove (renderer_native->gpu_datas,
+                                is_gpu_unused,
+                                used_gpus);
+ }
++
++#include "backends/native/meta-renderer-native-poc.inc"
+ 
+ static void
+ release_unused_gpus_idle (gpointer user_data)
+@@ -2069,7 +2095,14 @@
+   renderer_gpu_data->render_device = render_device;
+   renderer_gpu_data->gpu_kms = gpu_kms;
+ 
+-  init_secondary_gpu_data (renderer_gpu_data);
++  if (gpu_poc_drm_only (render_device))
++    {
++      renderer_gpu_data->secondary.copy_mode = META_SHARED_FRAMEBUFFER_COPY_MODE_PRIMARY;
++      renderer_gpu_data->secondary.copy_mode_primary_force_cpu = TRUE;
++      GPU_POC_LOG ("event=drm-only-cpu-copy path=%s", meta_gpu_kms_get_file_path (gpu_kms));
++    }
++  else
++    init_secondary_gpu_data (renderer_gpu_data);
+   return renderer_gpu_data;
+ }
+ 
+@@ -2228,6 +2261,8 @@
+                  renderer_data_mode_to_string (renderer_gpu_data->mode));
+     }
+ 
++  GPU_POC_LOG ("event=gpu-data-created path=%s", gpu_kms ?
++    meta_gpu_kms_get_file_path (gpu_kms) : "surfaceless");
+   g_hash_table_insert (renderer_native->gpu_datas,
+                        gpu_kms,
+                        renderer_gpu_data);
+@@ -2489,6 +2524,13 @@
+         return FALSE;
+ 
+       kms_device = meta_gpu_kms_get_kms_device (renderer_native->primary_gpu_kms);
++      if (gpu_release_poc_enabled () && g_getenv ("MUTTER_GPU_RELEASE_POC_DRM_ONLY_PCI") &&
++          g_strcmp0 (meta_kms_device_get_driver_name (kms_device), "amdgpu") != 0)
++        {
++          g_set_error (error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
++                       "DRM-only PoC requires an AMD primary GPU");
++          return FALSE;
++        }
+       flags = meta_kms_device_get_flags (kms_device);
+       renderer_native->has_addfb2 = !!(flags & META_KMS_DEVICE_FLAG_HAS_ADDFB2);
+ 
+@@ -2529,6 +2571,7 @@
+         return FALSE;
+     }
+ 
++  gpu_poc_start (renderer_native);
+   return TRUE;
+ }
+ 
+@@ -2543,6 +2586,7 @@
+ {
+   MetaRendererNative *renderer_native = META_RENDERER_NATIVE (object);
+ 
++  gpu_poc_stop (renderer_native);
+   clear_detached_onscreens (renderer_native);
+ 
+   G_OBJECT_CLASS (meta_renderer_native_parent_class)->dispose (object);

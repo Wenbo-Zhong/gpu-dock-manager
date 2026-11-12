@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "usb4-gpu-manager"
+version = "0.1.2"
+description = "A GTK4 desktop and privileged local manager for USB4 NVIDIA eGPUs"
+requires-python = ">=3.10"
+license = {text = "GPL-3.0-only"}
+readme = "README.md"
+
+[project.scripts]
+usb4-gpu-manager = "usb4_gpu_manager.gui:main"
+usb4-gpu-managerctl = "usb4_gpu_manager.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["usb4_gpu_manager*"]

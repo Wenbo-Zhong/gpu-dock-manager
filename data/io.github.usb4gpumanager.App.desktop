@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=USB4 GPU Manager
+Name[zh_CN]=USB4 外接显卡管理器
+Comment=Manage external GPU connections, displays and sleep recovery
+Comment[zh_CN]=管理外接显卡、显示器与睡眠恢复
+Exec=usb4-gpu-manager
+Icon=video-display
+Terminal=false
+Type=Application
+Categories=Settings;HardwareSettings;
+StartupNotify=true

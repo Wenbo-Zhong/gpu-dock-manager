@@ -1,0 +1,21 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+screenshots/
+research/
+*.log
+diagnostics*.json
+
+# Local diagnostics, credentials and editor state
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.bak
+*.bak-*
+.vscode/
+.idea/

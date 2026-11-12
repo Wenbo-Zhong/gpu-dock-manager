@@ -1,0 +1,12 @@
+include install.sh uninstall.sh Makefile LICENSE README.md ARCHITECTURE.md SECURITY.md CONTRIBUTING.md
+recursive-include data *.py *.service *.conf *.policy *.desktop
+recursive-include tests *.py
+recursive-include tools *.py *.md
+recursive-include experimental *.py *.md *.c *.h *.inc *.patch *.json COPYING.GPL-2
+recursive-include docs *.md *.json
+recursive-include packaging *
+recursive-include skills *.md
+prune research
+prune screenshots
+
+include LICENSE NOTICE.md
