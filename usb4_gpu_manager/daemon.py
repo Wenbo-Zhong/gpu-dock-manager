@@ -78,7 +78,9 @@ class Service:
     def _internal_status(self, pci, invocation):
         try:
             # Do not report a partially switched pair while a job owns the device lock.
-            if not self.controller.device_lock.acquire(blocking=False):
+            # Ordinary refreshes also take this lock. Give them time to finish
+            # instead of turning a brief refresh into a failed inspection.
+            if not self.controller.device_lock.acquire(timeout=2):
                 raise RuntimeError(tr('The device is being updated. Inspect the 4070 again later.'))
             try:
                 status = bounded_internal_status(pci)

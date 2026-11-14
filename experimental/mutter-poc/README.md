@@ -163,3 +163,49 @@ C 测试编译实际的接口 `.inc`，使用惰性 GPU 对象与真实独立 D-
 
 生成的 Mutter 补丁、overlay C/header 和 C harness 按 GPL-2.0-or-later 提供，与 Mutter 许可证兼容；许可证文本见 `COPYING.GPL-2`。
 其余本项目工具遵循项目 GPL-3.0-only 许可证。此目录不改变上游 Mutter 或本项目其他文件的许可证。
+
+
+## v5: explicit internal RTX 4070 experiment
+
+`session.py enable --drm-only --internal-4070 --persistent --manifest <v5-manifest>`
+opts the validated internal 10de:2820 / 10de:22bd pair into the DRM-only CPU-copy
+path. The graphics function must not be a boot GPU, and the IOMMU group must
+contain only that graphics/audio pair. AMD must already drive an enabled internal
+panel. The default external-GPU policy remains opt-in and still rejects boot GPUs.
+The C path separately checks the exact internal PCI address, vendor, product and
+non-boot status, and rejects devices marked removable. It does not generalize this
+policy to other internal or NVIDIA GPUs.
+
+The internal experiment prevents normal NVIDIA EGL/secondary-context setup and
+excludes the selected card from DRM-lease announcements to Xwayland. It retains
+the CPU-copy display path and existing primary/view/CRTC/pending-work guards.
+This does not force-close KMS or logind references. A remaining KMS hold is still
+a blocker; actual desktop unloading and HDMI output need live validation.
+
+A separately verified v5 manifest also enables startup cleanup of LD_LIBRARY_PATH
+and restoration of ordinary XDG_DATA_DIRS after the native renderer starts. The
+compositor loader has already captured its startup library search paths, while
+new child processes receive a clean environment. Already running applications
+from the previous desktop session are not repaired by preparing a new session.
+
+After restarting, inspect with:
+
+```sh
+/usr/bin/python3 -I experimental/mutter-poc/control.py inspect --internal-4070
+```
+
+If the internal GPU is already isolated by boot configuration, first inspect the
+manager state. Test loading only with the AMD panel active. Do not infer safe
+removal from a cache-reclaimed flag. Re-enable/disable HDMI and confirm rendering,
+cursor behavior and holder release in a controlled hardware test.
+
+Recovery from a TTY:
+
+```sh
+/usr/bin/python3 -I experimental/mutter-poc/session.py disable
+```
+
+The v5 build passed 136 Python tests, 10 ASan/UBSan C tests, library-identity checks,
+GPU-free isolated GNOME startup and AMD/internal-NVIDIA render-only startup. These
+are not a live GNOME switch or successful internal-GPU unload. See
+`docs/reports/evidence/20261113-mutter-internal-v5-build.json` in the project root.

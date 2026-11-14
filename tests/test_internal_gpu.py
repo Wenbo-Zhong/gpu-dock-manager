@@ -54,6 +54,42 @@ class InternalGpuTests(unittest.TestCase):
         for device in (self.gpu, self.audio):
             self.assertEqual((device / "driver_override").read_text().strip(), "")
 
+    def test_module_loading_reserves_original_bindings(self):
+        self.bind(self.gpu, "vfio-pci", self.bus)
+        def load(*args, **kwargs):
+            self.assertEqual(self.drivers(), ("vfio-pci", "vfio-pci"))
+            for device in (self.gpu, self.audio):
+                self.assertEqual((device / "driver_override").read_text().strip(), "vfio-pci")
+        with (patch.object(internal_gpu, "check_idle"),
+              patch.object(internal_gpu, "command", side_effect=load),
+              patch.object(internal_gpu, "bind_driver", side_effect=self.bind)):
+            internal_gpu.switch_internal_gpu(PCI, "internal-attach", self.sysfs)
+        self.assertEqual(self.drivers(), internal_gpu.HOST_DRIVERS)
+
+    def test_module_failure_releases_reservations_without_switching(self):
+        self.bind(self.gpu, "vfio-pci", self.bus)
+        with (patch.object(internal_gpu, "check_idle"),
+              patch.object(internal_gpu, "command", side_effect=RuntimeError("module failed")),
+              patch.object(internal_gpu, "bind_driver") as bind,
+              self.assertRaisesRegex(RuntimeError, "module failed")):
+            internal_gpu.switch_internal_gpu(PCI, "internal-attach", self.sysfs)
+        bind.assert_not_called()
+        self.assertEqual(self.drivers(), ("vfio-pci", "vfio-pci"))
+        for device in (self.gpu, self.audio):
+            self.assertEqual((device / "driver_override").read_text().strip(), "")
+
+    def test_second_idle_check_failure_keeps_original_pair(self):
+        self.bind(self.gpu, "vfio-pci", self.bus)
+        with (patch.object(internal_gpu, "check_idle", side_effect=[None, RuntimeError("new holder")]),
+              patch.object(internal_gpu, "command"),
+              patch.object(internal_gpu, "bind_driver") as bind,
+              self.assertRaisesRegex(RuntimeError, "new holder")):
+            internal_gpu.switch_internal_gpu(PCI, "internal-attach", self.sysfs)
+        bind.assert_not_called()
+        self.assertEqual(self.drivers(), ("vfio-pci", "vfio-pci"))
+        for device in (self.gpu, self.audio):
+            self.assertEqual((device / "driver_override").read_text().strip(), "")
+
     def test_binding_failure_restores_original_pair(self):
         self.bind(self.gpu, "vfio-pci", self.bus)
 

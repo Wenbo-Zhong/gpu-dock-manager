@@ -9,6 +9,31 @@ from usb4_gpu_manager.daemon import Service
 
 
 class InhibitorTests(unittest.TestCase):
+    def test_internal_inspection_waits_briefly_for_refresh_lock(self):
+        service = Service.__new__(Service)
+        service.controller = Mock()
+        service.controller.device_lock = threading.Lock()
+        service.controller.device_lock.acquire()
+        timer = threading.Timer(.03, service.controller.device_lock.release)
+        timer.start()
+        with patch('usb4_gpu_manager.daemon.bounded_internal_status', return_value={'pci': '0000:65:00.0'}) as inspect, patch('usb4_gpu_manager.daemon.GLib.idle_add') as reply:
+            service._internal_status('0000:65:00.0', Mock())
+        timer.join()
+        inspect.assert_called_once()
+        self.assertEqual(reply.call_args.args[-1], {'pci': '0000:65:00.0'})
+        self.assertFalse(service.controller.device_lock.locked())
+
+    def test_internal_inspection_does_not_read_while_device_lock_is_busy(self):
+        service = Service.__new__(Service)
+        service.controller = Mock()
+        service.controller.device_lock.acquire.return_value = False
+        with patch('usb4_gpu_manager.daemon.bounded_internal_status') as inspect, patch('usb4_gpu_manager.daemon.GLib.idle_add') as reply:
+            service._internal_status('0000:65:00.0', Mock())
+        inspect.assert_not_called()
+        service.controller.device_lock.release.assert_not_called()
+        service.controller.device_lock.acquire.assert_called_once_with(timeout=2)
+        self.assertIsInstance(reply.call_args.args[-1], RuntimeError)
+
     def test_internal_reply_waits_for_driver_completion_or_failure(self):
         for failure in (False, True):
             with self.subTest(failure=failure):

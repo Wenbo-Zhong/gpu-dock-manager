@@ -86,6 +86,8 @@ def main():
                 "system_companions": companions,
                 "fd_lifecycle_trace": True,
                 "drm_only_cpu_copy": args.drm_only,
+                "internal_4070_drm_only": args.drm_only,
+                "clean_child_environment": True,
                 "hardware_verified": False, "system_compositor_replaced": False}
     manifest["gi_library_identity"] = check_gi(manifest)
     manifest["isolated_startup"] = run_smoke(manifest)

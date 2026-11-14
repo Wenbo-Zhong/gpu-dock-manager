@@ -248,7 +248,8 @@ def snapshot(profile=None, metrics=True):
     gpus = gpu_inventory()
     gpu = target_gpu(gpus, profile)
     if not gpu and not profile.get("target"):
-        candidates = [g for g in gpus if g["vendor"] == "0x10de" and g["driver"] != "vfio-pci" and not g["boot_vga"] and g["external"]]
+        # Keep boot GPUs visible; detach_check independently forbids removal.
+        candidates = [g for g in gpus if g["vendor"] == "0x10de" and g["driver"] != "vfio-pci" and g["external"]]
         gpu = candidates[0] if len(candidates) == 1 else None
     occupied = holders(gpu) if gpu else {"processes": [], "complete": True}
     return {"timestamp": time.time(), "gpus": gpus, "target": gpu, "internal_gpu": internal_gpu_status(gpus),

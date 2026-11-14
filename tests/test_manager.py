@@ -104,7 +104,7 @@ class SafetyTests(unittest.TestCase):
                 remove_gpu(selected, base)
             with patch("usb4_gpu_manager.worker.syslog.syslog"), patch("usb4_gpu_manager.worker.syslog.openlog"), patch.object(controller, "Path", side_effect=mapped), patch.object(controller, "device_action", side_effect=action), patch.object(controller, "holders", return_value={"complete": True, "processes": []}), patch.object(controller, "usb4_inventory", return_value=[]), patch.object(controller, "gpu_inventory", return_value=[]), patch.object(controller, "command", return_value=subprocess.CompletedProcess([], 0, "", "")) as run:
                 manager._detach(gpu())
-                run.assert_called_once()
+                run.assert_not_called()
             self.assertEqual((base / "0000:43:00.0/remove").read_text(), "1\n")
             self.assertEqual((base / "0000:43:00.1/remove").read_text(), "1\n")
             self.assertEqual((base / "0000:43:00.2/remove").read_text(), "0")
@@ -239,6 +239,18 @@ class DeploymentTests(unittest.TestCase):
 
 
 class LifecycleTests(unittest.TestCase):
+    def test_boot_external_gpu_remains_visible_but_cannot_be_removed(self):
+        card = gpu(boot_vga=True, power_state='D0', runtime_status='active')
+        with (patch.object(hardware, 'gpu_inventory', return_value=[card]),
+              patch.object(hardware, 'usb4_inventory', return_value=[]),
+              patch.object(hardware, 'module_parameters', return_value={}),
+              patch.object(hardware, 'holders', return_value={'complete': True, 'processes': []})):
+            data = hardware.snapshot(metrics=False)
+        self.assertEqual(data['target'], card)
+        self.assertEqual(data['target']['driver'], 'nvidia')
+        self.assertFalse(data['detach']['safe'])
+        self.assertTrue(data['detach']['blockers'])
+
     def test_internal_metrics_query_only_loaded_awake_gpu(self):
         card = {**gpu(external=False), "pci": "0000:65:00.0", "device": "0x2820",
                 "runtime_status": "active", "power_state": "D0"}

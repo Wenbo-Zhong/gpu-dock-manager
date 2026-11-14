@@ -413,7 +413,8 @@ class Window(Adw.ApplicationWindow):
         deploy = data.get("deployment", {})
         can_attach = deploy.get("managed") or (data.get("internal_gpu") and previous
                                                and state in {"present", "detached"})
-        self.attach_button.set_sensitive(bool(ready and can_attach and not deploy.get("restart_required")))
+        self.attach_button.set_sensitive(bool(ready and can_attach and not deploy.get("restart_required")
+                                              and not (gpu and gpu.get("boot_vga"))))
         self.detach_button.set_sensitive(bool(ready and gpu and data.get("detach", {}).get("safe")))
         self.queue_button.set_sensitive(bool(ready and gpu and gpu["external_display_state"] in {"connected", "disconnected"}
                                              and not gpu["boot_vga"] and data.get("other_internal_display_ready")))
@@ -421,6 +422,8 @@ class Window(Adw.ApplicationWindow):
         self.queue_button.set_visible(not removed)
         attach_hint = (tr('Configuration deployed; restart first.') if deploy.get("restart_required") else
                        tr('Scan PCIe and load the driver.') if can_attach else tr('Connect the external GPU first.'))
+        if gpu and gpu.get("boot_vga"):
+            attach_hint = tr('This GPU is the boot GPU or drives an internal panel and cannot be safely removed.')
         self.attach_button.set_tooltip_text(attach_hint)
         panel.driver.set_text((tr('Safely removed · USB4 disconnected') if state == "disconnected" else
                                tr('Safely removed · You may unplug USB4')) if removed else attach_hint)

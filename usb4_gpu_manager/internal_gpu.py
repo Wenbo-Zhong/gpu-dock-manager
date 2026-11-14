@@ -229,16 +229,28 @@ def switch_internal_gpu(pci, action, sysfs=Path("/sys"), protect_connected=False
     modules = ("nvidia", "nvidia_modeset", "nvidia_drm", "nvidia_uvm", "snd_hda_intel") if action == "internal-attach" else (VFIO,)
     if action == "internal-attach" and not graphics_changing:
         modules = ("snd_hda_intel",)
-    loaded_module = False
-    for module in modules:
-        if not (sysfs / "module" / module.replace("-", "_")).exists():
-            command(["modprobe", "--ignore-install", module], timeout=10)
-            loaded_module = True
-    if loaded_module:
-        check_idle(gpu, audio, group, sysfs, protect_connected, graphics_changing=graphics_changing)
-    if (tuple(driver(device) for device in devices) != starting
-            or any(read(device / "driver_override") not in {"", "(null)"} for device in devices)):
-        raise RuntimeError(tr('Driver state changed. Refresh and try again.'))
+    # Loading modules may probe currently unbound functions. Pin each function
+    # to its starting driver until the second idle check has passed. In
+    # particular, NVIDIA must not claim graphics before VFIO is available.
+    reserved = []
+    try:
+        for device, previous in zip(devices, starting):
+            reserved.append(device)
+            (device / "driver_override").write_text((previous or "none") + "\n")
+        loaded_module = False
+        for module in modules:
+            if not (sysfs / "module" / module.replace("-", "_")).exists():
+                command(["modprobe", "--ignore-install", module], timeout=10)
+                loaded_module = True
+        if (tuple(driver(device) for device in devices) != starting
+                or any(read(device / "driver_override") != (previous or "none")
+                       for device, previous in zip(devices, starting))):
+            raise RuntimeError(tr('Driver state changed. Refresh and try again.'))
+        if loaded_module:
+            check_idle(gpu, audio, group, sysfs, protect_connected, graphics_changing=graphics_changing)
+    finally:
+        for device in reserved:
+            (device / "driver_override").write_text("\n")
 
     changed = [(device, previous, target) for device, previous, target in zip(devices, starting, desired)
                if previous != target]

@@ -244,6 +244,7 @@ gpu_poc_bus_acquired (GDBusConnection *connection,
 static void
 gpu_poc_start (MetaRendererNative *native)
 {
+  gpu_release_poc_clean_child_environment ();
   if (gpu_release_poc_enabled ())
     native->poc_name_id = g_bus_own_name (G_BUS_TYPE_SESSION, GPU_POC_BUS,
       G_BUS_NAME_OWNER_FLAGS_NONE, gpu_poc_bus_acquired, NULL, NULL, native, NULL);

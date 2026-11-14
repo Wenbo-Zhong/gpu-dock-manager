@@ -89,6 +89,7 @@ def main():
     parser.add_argument("--manifest", type=Path, default=Path.home() / ".cache/usb4-gpu-manager/mutter-poc/manifest.json")
     parser.add_argument("--drm-only", action="store_true", help="Explicitly select the DRM-only CPU-copy experiment")
     parser.add_argument("--persistent", action="store_true", help="Try the verified build each login unless a previous startup failed")
+    parser.add_argument("--internal-4070", action="store_true", help="Explicitly enroll the supported internal RTX 4070")
     args = parser.parse_args()
     if os.geteuid() == 0:
         parser.error("请以普通用户运行，不使用 sudo。")
@@ -113,6 +114,8 @@ def main():
     manifest = verify_manifest(args.manifest.resolve())
     if bool(manifest.get("drm_only_cpu_copy")) != args.drm_only:
         raise RuntimeError("DRM-only 构建必须显式添加 --drm-only；普通构建不能使用此开关。")
+    if args.internal_4070 and (not args.drm_only or not manifest.get('internal_4070_drm_only')):
+        raise RuntimeError('This build does not support the internal RTX 4070 experiment')
     from preflight import check as check_gi
     check_gi(manifest)
     # Resolve the target from the read-only system service. Do not import the app.
@@ -129,7 +132,21 @@ def main():
                 and previous.get("manifest") == str(args.manifest.resolve())
                 and re.fullmatch(r"[0-9a-f]{4}:[0-9a-f]{2}:[0-9a-f]{2}\.[0-7]", previous.get("pci", "")))
     try:
-        if (enrolled and status.get("service_connected") and not status.get("status_stale")
+        if args.internal_4070:
+            from device_policy import validate_internal
+            info = status.get('internal_gpu') or {}
+            if (not status.get('service_connected') or not status.get('can_mutate_devices')
+                    or info.get('reason') or status.get('operation', {}).get('state') in {'running', 'waiting', 'removing'}):
+                raise RuntimeError('Current internal GPU status is not eligible')
+            pci = info.get('pci')
+            device = validate_internal(pci)
+            if not any(g.get('vendor') == '0x1002' and g.get('driver') == 'amdgpu'
+                       and any(c.get('kind') == 'internal' and c.get('status') == 'connected' and c.get('enabled') == 'enabled'
+                               for c in g.get('connectors', [])) for g in status.get('gpus', [])):
+                raise RuntimeError('Enable the AMD internal panel before enrolling')
+            cards = [p.name for p in (device / 'drm').glob('card[0-9]*') if '-' not in p.name]
+            trace_device = '/dev/dri/' + cards[0] if len(cards) == 1 else '/dev/dri/card999999'
+        elif (enrolled and status.get("service_connected") and not status.get("status_stale")
                 and status.get("transport", {}).get("pci_visible") is False
                 and not (Path("/sys/bus/pci/devices") / previous["pci"]).exists()
                 and any(gpu.get("vendor") == "0x1002" and gpu.get("driver") == "amdgpu"
@@ -163,7 +180,10 @@ def main():
         raise RuntimeError("目标覆盖文件已存在且内容不同，请先检查：" + str(path))
     save_state({"manifest": str(args.manifest.resolve()), "unit": unit,
                 "trace_device": trace_device, "pci": pci, "dropin": str(path),
-                "drm_only_cpu_copy": args.drm_only, "persistent": args.persistent})
+                "drm_only_cpu_copy": args.drm_only, "persistent": args.persistent,
+                "internal_4070": args.internal_4070,
+                "external_pci": next((g['pci'] for g in status.get('gpus', [])
+                                      if g.get('external') and g.get('vendor') == '0x10de'), None)})
     atomic_write(path, persistent_body if args.persistent else body)
     subprocess.run(["/usr/bin/systemctl", "--user", "daemon-reload"], check=True)
     if args.persistent:

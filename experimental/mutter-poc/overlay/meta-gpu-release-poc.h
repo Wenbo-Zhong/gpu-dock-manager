@@ -10,6 +10,24 @@ gpu_release_poc_enabled (void)
   return g_strcmp0 (g_getenv ("MUTTER_GPU_RELEASE_POC"), "1") == 0;
 }
 
+static inline void
+gpu_release_poc_clean_child_environment (void)
+{
+  const char *data_dirs;
+
+  if (!gpu_release_poc_enabled () ||
+      g_strcmp0 (g_getenv ("MUTTER_GPU_RELEASE_POC_CLEAN_CHILD_ENV"), "1") != 0)
+    return;
+  data_dirs = g_getenv ("MUTTER_GPU_RELEASE_POC_ORIGINAL_DATA_DIRS");
+  /* The dynamic loader has already captured its startup search paths. Keep
+   * those paths out of environments passed to applications launched by Shell. */
+  if (data_dirs)
+    g_setenv ("XDG_DATA_DIRS", data_dirs, TRUE);
+  g_unsetenv ("LD_LIBRARY_PATH");
+  g_unsetenv ("MUTTER_GPU_RELEASE_POC_ORIGINAL_DATA_DIRS");
+  g_message ("GPU-RELEASE-POC event=child-environment-cleaned");
+}
+
 static inline gboolean
 gpu_release_poc_trace_device (const char *path)
 {

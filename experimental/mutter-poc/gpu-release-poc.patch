@@ -342,7 +342,7 @@
  
 --- /dev/null
 +++ b/src/backends/native/meta-gpu-drm-only-poc.h
-@@ -0,0 +1,56 @@
+@@ -0,0 +1,78 @@
 +/* SPDX-License-Identifier: GPL-2.0-or-later */
 +#pragma once
 +#include <glib-object.h>
@@ -367,14 +367,33 @@
 +}
 +
 +static inline gboolean
++gpu_poc_internal_policy_matches (const char *requested,
++                                 const char *actual,
++                                 const char *vendor,
++                                 const char *product,
++                                 const char *boot_vga,
++                                 const char *removable)
++{
++  return gpu_release_poc_enabled () && requested &&
++    g_regex_match_simple ("^[0-9a-f]{4}:[0-9a-f]{2}:[0-9a-f]{2}\\.0$", requested, 0, 0) &&
++    g_strcmp0 (requested, actual) == 0 &&
++    g_strcmp0 (vendor, "0x10de\n") == 0 &&
++    g_strcmp0 (product, "0x2820\n") == 0 &&
++    g_strcmp0 (boot_vga, "0\n") == 0 &&
++    g_strcmp0 (removable, "removable\n") != 0;
++}
++
++static inline gboolean
 +gpu_poc_drm_only_path (const char *path)
 +{
 +  const char *requested = g_getenv ("MUTTER_GPU_RELEASE_POC_DRM_ONLY_PCI");
++  const char *internal = g_getenv ("MUTTER_GPU_RELEASE_POC_DRM_ONLY_INTERNAL_PCI");
 +  g_autofree char *name = NULL, *base = NULL, *link = NULL, *actual = NULL;
 +  g_autofree char *vendor = NULL, *boot = NULL, *removable = NULL;
 +  g_autofree char *vendor_path = NULL, *boot_path = NULL, *removable_path = NULL;
++  g_autofree char *product = NULL, *product_path = NULL;
 +
-+  if (!gpu_release_poc_enabled () || !requested || !path)
++  if (!gpu_release_poc_enabled () || (!requested && !internal) || !path)
 +    return FALSE;
 +  name = g_path_get_basename (path);
 +  if (!g_regex_match_simple ("^(card[0-9]+|renderD[0-9]+)$", name, 0, 0))
@@ -387,11 +406,14 @@
 +  vendor_path = g_build_filename (base, "vendor", NULL);
 +  boot_path = g_build_filename (base, "boot_vga", NULL);
 +  removable_path = g_build_filename (base, "removable", NULL);
++  product_path = g_build_filename (base, "device", NULL);
 +  if (!g_file_get_contents (vendor_path, &vendor, NULL, NULL) ||
-+      !g_file_get_contents (boot_path, &boot, NULL, NULL) ||
-+      !g_file_get_contents (removable_path, &removable, NULL, NULL))
++      !g_file_get_contents (boot_path, &boot, NULL, NULL))
 +    return FALSE;
-+  return gpu_poc_drm_policy_matches (requested, actual, vendor, boot, removable);
++  g_file_get_contents (removable_path, &removable, NULL, NULL);
++  g_file_get_contents (product_path, &product, NULL, NULL);
++  return gpu_poc_drm_policy_matches (requested, actual, vendor, boot, removable) ||
++    gpu_poc_internal_policy_matches (internal, actual, vendor, product, boot, removable);
 +}
 +
 +static inline gboolean
@@ -401,7 +423,7 @@
 +}
 --- /dev/null
 +++ b/src/backends/native/meta-gpu-release-poc.h
-@@ -0,0 +1,69 @@
+@@ -0,0 +1,87 @@
 +/* SPDX-License-Identifier: GPL-2.0-or-later */
 +#pragma once
 +
@@ -412,6 +434,24 @@
 +gpu_release_poc_enabled (void)
 +{
 +  return g_strcmp0 (g_getenv ("MUTTER_GPU_RELEASE_POC"), "1") == 0;
++}
++
++static inline void
++gpu_release_poc_clean_child_environment (void)
++{
++  const char *data_dirs;
++
++  if (!gpu_release_poc_enabled () ||
++      g_strcmp0 (g_getenv ("MUTTER_GPU_RELEASE_POC_CLEAN_CHILD_ENV"), "1") != 0)
++    return;
++  data_dirs = g_getenv ("MUTTER_GPU_RELEASE_POC_ORIGINAL_DATA_DIRS");
++  /* The dynamic loader has already captured its startup search paths. Keep
++   * those paths out of environments passed to applications launched by Shell. */
++  if (data_dirs)
++    g_setenv ("XDG_DATA_DIRS", data_dirs, TRUE);
++  g_unsetenv ("LD_LIBRARY_PATH");
++  g_unsetenv ("MUTTER_GPU_RELEASE_POC_ORIGINAL_DATA_DIRS");
++  g_message ("GPU-RELEASE-POC event=child-environment-cleaned");
 +}
 +
 +static inline gboolean
@@ -693,7 +733,7 @@
    G_OBJECT_CLASS (meta_render_device_parent_class)->finalize (object);
 --- /dev/null
 +++ b/src/backends/native/meta-renderer-native-poc.inc
-@@ -0,0 +1,274 @@
+@@ -0,0 +1,275 @@
 +/* SPDX-License-Identifier: GPL-2.0-or-later
 + * Included by meta-renderer-native.c, after the normal unused-GPU predicate.
 + * Opt-in research interface. It never removes a PCI device or kills clients.
@@ -940,6 +980,7 @@
 +static void
 +gpu_poc_start (MetaRendererNative *native)
 +{
++  gpu_release_poc_clean_child_environment ();
 +  if (gpu_release_poc_enabled ())
 +    native->poc_name_id = g_bus_own_name (G_BUS_TYPE_SESSION, GPU_POC_BUS,
 +      G_BUS_NAME_OWNER_FLAGS_NONE, gpu_poc_bus_acquired, NULL, NULL, native, NULL);

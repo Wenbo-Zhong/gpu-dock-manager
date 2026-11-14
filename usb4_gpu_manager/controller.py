@@ -375,17 +375,9 @@ class Controller:
             device_action("remove", gpu, timeout=25)
         except subprocess.TimeoutExpired as error:
             raise RuntimeError(tr('Driver removal exceeded 25 seconds. Device release is unconfirmed; monitoring continues. Do not unplug or retry removal yet.')) from error
-        if not any(item["driver"] == "nvidia" for item in gpu_inventory()):
-            # With the desktop's handles gone and no other NVIDIA GPU bound,
-            # ordinary module removal prevents premature probing on replug.
-            try:
-                result = command(["modprobe", "-r", "nvidia_uvm", "nvidia_drm", "nvidia_modeset", "nvidia"],
-                                 timeout=30, check=False)
-                unloaded = result.returncode == 0
-            except (OSError, subprocess.TimeoutExpired):
-                unloaded = False
-            if not unloaded:
-                self.event(tr('PCI device removed. Some idle modules still have kernel references and were not forcibly unloaded.'))
+        # PCI removal is sufficient. modprobe -r follows configured softdeps
+        # and can also unload vfio-pci, releasing an isolated internal GPU.
+        # Keep shared modules resident; never clean them up as part of detach.
         self.event(tr('Target GPU and audio function removed from PCI. You may unplug the GPU cable.'))
         return tr('Safely removed. You may unplug the GPU cable. Reconnect USB4 or click Reconnect to use it again.')
 

@@ -49,6 +49,9 @@ def child():
         # A successful JS startup must still use one copy of every library.
         maps = Path(f"/proc/{shell.pid}/maps").read_text().splitlines()
         prefix = Path(os.environ["POC_TEST_PREFIX"])
+        cleaned = 'event=child-environment-cleaned' in log.read_text(errors='replace')
+        if os.environ.get('MUTTER_GPU_RELEASE_POC_CLEAN_CHILD_ENV') == '1' and not cleaned:
+            raise RuntimeError('Private GNOME did not confirm child-environment cleanup')
         identities = {}
         for namespace, (name, _) in LIBRARIES.items():
             paths = sorted({line.split()[-1] for line in maps if "/" + name in line})
@@ -78,6 +81,7 @@ def child():
                           "system_bus_redirected_to_private_bus": True,
                           "shell_js_started": True, "stable_after_start_seconds": 3,
                           "display_config_responded": True, "library_identity": identities,
+                          "child_environment_cleaned": cleaned,
                           "hardware_verified": False}), flush=True)
     finally:
         if shell.poll() is None:
@@ -121,6 +125,9 @@ def run_smoke(manifest, render_only_pcis=None):
                "LIBGL_ALWAYS_SOFTWARE": "1", "GALLIUM_DRIVER": "llvmpipe",
                "__EGL_VENDOR_LIBRARY_FILENAMES": "/usr/share/glvnd/egl_vendor.d/50_mesa.json",
                "MUTTER_GPU_RELEASE_POC": "1", "POC_TEST_PREFIX": manifest["prefix"]}
+        if manifest.get('clean_child_environment'):
+            env['MUTTER_GPU_RELEASE_POC_CLEAN_CHILD_ENV'] = '1'
+            env['MUTTER_GPU_RELEASE_POC_ORIGINAL_DATA_DIRS'] = '/usr/local/share:/usr/share'
         if manifest.get("fd_lifecycle_trace"):
             env["MUTTER_GPU_RELEASE_POC_TRACE_FDS"] = "1"
         extra_binds = []
@@ -143,7 +150,13 @@ def run_smoke(manifest, render_only_pcis=None):
             for key in ("LIBGL_ALWAYS_SOFTWARE", "GALLIUM_DRIVER", "__EGL_VENDOR_LIBRARY_FILENAMES"):
                 env.pop(key, None)
             env["POC_TEST_RENDER_ONLY"] = "1"
-            env["MUTTER_GPU_RELEASE_POC_DRM_ONLY_PCI"] = nvidia_pci
+            device = Path('/sys/bus/pci/devices') / nvidia_pci
+            if manifest.get('internal_4070_drm_only') and (device / 'device').read_text().strip() == '0x2820':
+                from device_policy import validate_internal
+                validate_internal(nvidia_pci)
+                env['MUTTER_GPU_RELEASE_POC_DRM_ONLY_INTERNAL_PCI'] = nvidia_pci
+            else:
+                env["MUTTER_GPU_RELEASE_POC_DRM_ONLY_PCI"] = nvidia_pci
         command = ["/usr/bin/bwrap", "--ro-bind", "/", "/", "--dev", "/dev", "--proc", "/proc",
                    "--unshare-all", "--die-with-parent", "--new-session", "--tmpfs", "/run",
                    "--tmpfs", "/tmp", "--bind", directory, directory, *extra_binds, "--",

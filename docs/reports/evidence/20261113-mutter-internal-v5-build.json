@@ -1,0 +1,59 @@
+{
+  "date": "2026-11-13",
+  "build": "v5-internal-4070",
+  "installed_mutter_version": "50.1-0ubuntu2.5",
+  "patch_sha256": "6130daad47cbd01c25382b3e2664657a0f163840770fbe05fd7d9bd1fa793c89",
+  "library_sha256": "ba4d3c774d9be775aa4dbef06876c733335e79da50022e2cdfd5b4e0e9bb6dc6",
+  "internal_4070_drm_only": true,
+  "clean_child_environment": true,
+  "isolated_startup": {
+    "passed": true,
+    "mode": "headless-software",
+    "drm_devices_visible": false,
+    "drm_primary_nodes_visible": false,
+    "target_fds": [],
+    "system_bus_visible": false,
+    "separate_session_bus": true,
+    "system_bus_redirected_to_private_bus": true,
+    "shell_js_started": true,
+    "stable_after_start_seconds": 3,
+    "display_config_responded": true,
+    "library_identity": {
+      "Meta": true,
+      "Clutter": true,
+      "Cogl": true,
+      "Mtk": true
+    },
+    "child_environment_cleaned": true,
+    "hardware_verified": false,
+    "library_sha256": "ba4d3c774d9be775aa4dbef06876c733335e79da50022e2cdfd5b4e0e9bb6dc6"
+  },
+  "internal_render_only_startup": {
+    "passed": true,
+    "mode": "headless-render-nodes",
+    "drm_devices_visible": true,
+    "drm_primary_nodes_visible": false,
+    "target_fds": [
+      "/dev/dri/renderD129"
+    ],
+    "system_bus_visible": false,
+    "separate_session_bus": true,
+    "system_bus_redirected_to_private_bus": true,
+    "shell_js_started": true,
+    "stable_after_start_seconds": 3,
+    "display_config_responded": true,
+    "library_identity": {
+      "Meta": true,
+      "Clutter": true,
+      "Cogl": true,
+      "Mtk": true
+    },
+    "child_environment_cleaned": true,
+    "hardware_verified": false,
+    "library_sha256": "ba4d3c774d9be775aa4dbef06876c733335e79da50022e2cdfd5b4e0e9bb6dc6"
+  },
+  "python_tests": 136,
+  "sanitized_c_tests": 10,
+  "live_hardware_reclamation_verified": false,
+  "next_login_configured": true
+}

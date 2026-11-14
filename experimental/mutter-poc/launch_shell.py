@@ -19,6 +19,7 @@ def prepare_environment(state):
     environment.pop("MUTTER_GPU_RELEASE_POC_TRACE_DEVICE", None)
     environment.pop("MUTTER_GPU_RELEASE_POC_TRACE_FDS", None)
     environment.pop("MUTTER_GPU_RELEASE_POC_DRM_ONLY_PCI", None)
+    environment.pop("MUTTER_GPU_RELEASE_POC_DRM_ONLY_INTERNAL_PCI", None)
     if state.get("trial_consumed"):
         raise RuntimeError("单次 PoC 试用已结束，恢复系统 Mutter。")
     manifest = verify_manifest(Path(state["manifest"]))
@@ -39,12 +40,34 @@ def prepare_environment(state):
             environment["MUTTER_GPU_RELEASE_POC_TRACE_FDS"] = "1"
         environment["MUTTER_GPU_RELEASE_POC_TRACE_DEVICE"] = "/dev/dri/" + cards[0] if len(cards) == 1 else state["trace_device"]
     if state.get("drm_only_cpu_copy"):
-        if not absent and (len(cards) != 1 or
+        if state.get('internal_4070'):
+            from device_policy import validate_internal
+            if not manifest.get('internal_4070_drm_only'):
+                raise RuntimeError('Internal GPU policy is not supported by this build')
+            validate_internal(address)
+            environment['MUTTER_GPU_RELEASE_POC_DRM_ONLY_INTERNAL_PCI'] = address
+            external = state.get('external_pci')
+            if external and re.fullmatch(r'[0-9a-f]{4}:[0-9a-f]{2}:[0-9a-f]{2}\.0', external):
+                path = Path('/sys/bus/pci/devices') / external
+                try:
+                    if ((path / 'vendor').read_text().strip() == '0x10de'
+                            and (path / 'boot_vga').read_text().strip() == '0'
+                            and (path / 'removable').read_text().strip() == 'removable'):
+                        environment['MUTTER_GPU_RELEASE_POC_DRM_ONLY_PCI'] = external
+                except OSError:
+                    pass
+        elif not absent and (len(cards) != 1 or
             (pci / "vendor").read_text().strip() != "0x10de" or
             (pci / "boot_vga").read_text().strip() != "0" or
             (pci / "removable").read_text().strip() != "removable"):
             raise RuntimeError("DRM-only 目标身份或可移除属性已变化。")
-        environment["MUTTER_GPU_RELEASE_POC_DRM_ONLY_PCI"] = state["pci"]
+        if not state.get('internal_4070'):
+            environment["MUTTER_GPU_RELEASE_POC_DRM_ONLY_PCI"] = state["pci"]
+    if manifest.get('clean_child_environment'):
+        environment['MUTTER_GPU_RELEASE_POC_CLEAN_CHILD_ENV'] = '1'
+        environment['MUTTER_GPU_RELEASE_POC_ORIGINAL_DATA_DIRS'] = ':'.join(
+            p for p in environment.get('XDG_DATA_DIRS', '/usr/local/share:/usr/share').split(':')
+            if '/.cache/usb4-gpu-manager/' not in p)
     environment["XDG_DATA_DIRS"] = manifest["prefix"] + "/share:" + environment.get("XDG_DATA_DIRS", "/usr/local/share:/usr/share")
     return environment
 
@@ -112,6 +135,9 @@ def main():
         environment.pop("MUTTER_GPU_RELEASE_POC_TRACE_DEVICE", None)
         environment.pop("MUTTER_GPU_RELEASE_POC_TRACE_FDS", None)
         environment.pop("MUTTER_GPU_RELEASE_POC_DRM_ONLY_PCI", None)
+        environment.pop("MUTTER_GPU_RELEASE_POC_DRM_ONLY_INTERNAL_PCI", None)
+        environment.pop("MUTTER_GPU_RELEASE_POC_CLEAN_CHILD_ENV", None)
+        environment.pop("MUTTER_GPU_RELEASE_POC_ORIGINAL_DATA_DIRS", None)
     if args.verify_only:
         print("PoC 环境校验通过；未启动、重启或替换 GNOME。")
         return 0

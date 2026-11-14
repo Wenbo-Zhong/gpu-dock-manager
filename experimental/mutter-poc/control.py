@@ -35,14 +35,19 @@ def process_snapshot(pid, nodes, proc=Path("/proc")):
     return {"pid": pid, "start_time": start, "nodes": sorted(opened), "complete": complete}
 
 
-def validate_target(data, now=None, allow_connected=False):
+def validate_target(data, now=None, allow_connected=False, internal=False):
     now = time.time() if now is None else now
     if not data.get("service_connected") or not data.get("can_mutate_devices") or now - data.get("timestamp", 0) > 10:
         raise RuntimeError("管理服务的设备状态不可用或已过期。")
     if data.get("operation", {}).get("state") in {"running", "waiting", "removing"}:
         raise RuntimeError("已有显卡管理操作，请先完成或取消。")
     gpu = data.get("target")
-    if not gpu or gpu.get("vendor") != "0x10de" or not gpu.get("external") or gpu.get("boot_vga"):
+    if internal:
+        from device_policy import validate_internal
+        pci = (data.get('internal_gpu') or {}).get('pci')
+        validate_internal(pci)
+        gpu = next((g for g in data.get('gpus', []) if g.get('pci') == pci), None)
+    if not gpu or gpu.get("vendor") != "0x10de" or (not internal and not gpu.get("external")) or gpu.get("boot_vga"):
         raise RuntimeError("没有唯一可移除 NVIDIA 目标。")
     allowed = {"disconnected", "connected"} if allow_connected else {"disconnected"}
     if gpu.get("driver") != "nvidia":
@@ -113,6 +118,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action", choices=("inspect", "reclaim"))
     parser.add_argument("--output", type=Path)
+    parser.add_argument('--internal-4070', action='store_true')
     args = parser.parse_args()
     if os.geteuid() == 0:
         parser.error("请在已加载 PoC 的 GNOME 会话中以普通用户运行，不使用 sudo。")
@@ -128,7 +134,7 @@ def main():
         client = None
         try:
             client = Client()
-            gpu = validate_target(client.status(), allow_connected=args.action == "inspect")
+            gpu = validate_target(client.status(), allow_connected=args.action == "inspect", internal=args.internal_4070)
             device = "/dev/dri/" + gpu["card"]
             if (Path("/sys/class/drm") / gpu["card"] / "device").resolve().name != gpu["pci"]:
                 raise RuntimeError("PCI 与 DRM 对应关系已变化，请刷新后重试。")
@@ -149,7 +155,7 @@ def main():
                 if not initial.get("cache_present"):
                     raise RuntimeError("目标缓存已经不存在；应先分析用户态驱动引用，重复回收没有意义。")
                 # Recheck kernel-facing policy immediately before the request.
-                current = validate_target(client.status())
+                current = validate_target(client.status(), internal=args.internal_4070)
                 if (current["pci"], current["card"]) != (gpu["pci"], gpu["card"]):
                     raise RuntimeError("设备实例已变化，取消。")
                 started = time.time()

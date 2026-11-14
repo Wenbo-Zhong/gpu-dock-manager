@@ -270,6 +270,12 @@ static void test_drm_only_policy (void)
   const char *pci = "0000:03:00.0";
   GObject *object = g_object_new (G_TYPE_OBJECT, NULL);
 
+  g_assert_true (gpu_poc_internal_policy_matches ("0000:65:00.0", "0000:65:00.0", "0x10de\n", "0x2820\n", "0\n", NULL));
+  g_assert_false (gpu_poc_internal_policy_matches (NULL, "0000:65:00.0", "0x10de\n", "0x2820\n", "0\n", NULL));
+  g_assert_false (gpu_poc_internal_policy_matches ("0000:65:00.0", "0000:65:00.0", "0x10de\n", "0x2820\n", "1\n", NULL));
+  g_assert_false (gpu_poc_internal_policy_matches ("0000:65:00.0", "0000:65:00.0", "0x10de\n", "0x2bb3\n", "0\n", NULL));
+  g_assert_false (gpu_poc_internal_policy_matches ("0000:65:00.0", "0000:65:00.0", "0x10de\n", "0x2820\n", "0\n", "removable\n"));
+
   g_assert_true (gpu_poc_drm_policy_matches (pci, pci, "0x10de\n", "0\n", "removable\n"));
   g_assert_false (gpu_poc_drm_policy_matches (pci, pci, "0x1002\n", "0\n", "removable\n"));
   g_assert_false (gpu_poc_drm_policy_matches (pci, pci, "0x10de\n", "1\n", "removable\n"));
@@ -287,6 +293,25 @@ static void test_drm_only_policy (void)
   g_object_unref (object);
 }
 
+static void test_child_environment (void)
+{
+  g_autofree char *old_ld = g_strdup (g_getenv ("LD_LIBRARY_PATH"));
+  g_autofree char *old_data = g_strdup (g_getenv ("XDG_DATA_DIRS"));
+
+  g_setenv ("MUTTER_GPU_RELEASE_POC", "1", TRUE);
+  g_setenv ("MUTTER_GPU_RELEASE_POC_CLEAN_CHILD_ENV", "1", TRUE);
+  g_setenv ("MUTTER_GPU_RELEASE_POC_ORIGINAL_DATA_DIRS", "/usr/share", TRUE);
+  g_setenv ("LD_LIBRARY_PATH", "/private-experiment/lib", TRUE);
+  g_setenv ("XDG_DATA_DIRS", "/private-experiment/share:/usr/share", TRUE);
+  gpu_release_poc_clean_child_environment ();
+  g_assert_null (g_getenv ("LD_LIBRARY_PATH"));
+  g_assert_cmpstr (g_getenv ("XDG_DATA_DIRS"), ==, "/usr/share");
+  g_unsetenv ("MUTTER_GPU_RELEASE_POC_CLEAN_CHILD_ENV");
+  if (old_ld) g_setenv ("LD_LIBRARY_PATH", old_ld, TRUE);
+  if (old_data) g_setenv ("XDG_DATA_DIRS", old_data, TRUE);
+  else g_unsetenv ("XDG_DATA_DIRS");
+}
+
 int main (int argc, char **argv)
 {
   MetaRendererNative disabled = { 0 };
@@ -297,6 +322,7 @@ int main (int argc, char **argv)
   g_test_init (&argc, &argv, NULL);
   g_test_add_func ("/poc/fd-snapshot-preserves-errno", test_fd_snapshot_errno);
   g_test_add_func ("/poc/drm-only-policy", test_drm_only_policy);
+  g_test_add_func ("/poc/child-environment", test_child_environment);
   g_test_add ("/poc/primary-protected", Fixture, NULL, setup, test_primary, teardown);
   g_test_add ("/poc/release-and-repeat", Fixture, NULL, setup, test_release, teardown);
   g_test_add ("/poc/guards", Fixture, NULL, setup, test_guards, teardown);
