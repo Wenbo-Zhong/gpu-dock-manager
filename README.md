@@ -164,6 +164,8 @@ desktop-file-validate data/io.github.usb4gpumanager.App.desktop
 
 应用可通过 `make deb` 或 `make rpm` 构建，由 APT 或 DNF 安装。发行版安装包同时包含 Mutter 补丁、源码指纹、移植 skill 和可选的用户级更新提醒。[打包与旧安装迁移](docs/packaging.md) · [Mutter 移植与系统安装](docs/mutter-porting.md)
 
+每次推送或更新拉取请求时，GitHub Actions 会在检查通过后并行构建 DEB 和 RPM。进入 **Actions → Checks → 对应运行记录 → Artifacts**，下载 `usb4-gpu-manager-deb` 或 `usb4-gpu-manager-rpm`。流水线验证构建和包元数据，实际安装与显卡功能需要在目标系统验证。
+
 ## 托盘与后台权限
 
 桌面支持 StatusNotifierItem 时，最小化或关闭窗口会将界面隐藏到托盘，标题栏的退出按钮用于彻底退出界面。托盘菜单提供显示、隐藏和退出；再次打开快捷方式会恢复已有窗口。托盘不可用时不隐藏到不可访问的后台；托盘宿主退出时会恢复窗口。退出界面不停止系统管理服务。正在执行设备操作或等待注销时需先完成或取消操作再退出界面。
