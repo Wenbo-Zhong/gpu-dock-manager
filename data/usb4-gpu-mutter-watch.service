@@ -1,6 +1,5 @@
 [Unit]
-Description=Check configured distribution repositories for a newer Mutter base
-ConditionPathExists=%E/usb4-gpu-manager/mutter-watch.json
+Description=Check installed and repository versions of Mutter
 
 [Service]
 Type=oneshot

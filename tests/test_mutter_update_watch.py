@@ -47,3 +47,39 @@ mutter | 52-1 | /var/lib/dpkg/status
                 watch.check(config, path)
                 self.assertEqual(sum(call.args[0] == "/usr/bin/notify-send"
                                      for call in run.call_args_list), 2)
+
+    @unittest.skipUnless(shutil.which("dpkg"), "Debian version comparator is unavailable")
+    def test_installed_upgrade_notifies_once_without_repository_config(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            build = root / "usb4-gpu-manager/mutter-poc"
+            library = build / "lib/x86_64-linux-gnu/libmutter-18.so.0"
+            library.parent.mkdir(parents=True)
+            library.touch()
+            (build / "manifest.json").write_text(json.dumps({
+                "schema": 2, "prefix": str(build), "installed_mutter_version": "50.1-2",
+            }))
+            installed = "50.1-2"
+            notifications = []
+            command = watch.command
+
+            def run(*args, **kwargs):
+                if args[0] == "dpkg-query":
+                    return subprocess.CompletedProcess(args, 0, f"installed {installed}")
+                if args[0] == "/usr/bin/notify-send":
+                    notifications.append(args)
+                    return subprocess.CompletedProcess(args, 0)
+                return command(*args, **kwargs)
+
+            with (patch.dict(watch.os.environ, XDG_CACHE_HOME=directory, XDG_STATE_HOME=directory),
+                  patch.object(watch.shutil, "which", return_value="/usr/bin/notify-send"),
+                  patch.object(watch, "command", side_effect=run)):
+                watch.check_installed()
+                self.assertEqual(notifications, [])
+                installed = "50.1-10"
+                watch.check_installed()
+                watch.check_installed()
+
+            self.assertEqual(len(notifications), 1)
+            self.assertIn("50.1-10", notifications[0][-1])
+            self.assertIn("mutter-egpu-port/SKILL.md", notifications[0][-1])

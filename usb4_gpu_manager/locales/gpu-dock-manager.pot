@@ -1564,3 +1564,10 @@ msgstr ""
 msgid "{package} {version} is available. Use the mutter-egpu-port skill to port, build and validate the patch."
 msgstr ""
 
+
+msgid "Installed Mutter is newer than the experimental build"
+msgstr ""
+
+#, python-brace-format
+msgid "System Mutter {installed}, experimental build base {base}. Ask your AI assistant to read {skill}, adapt and rebuild the patch, validate it, then switch to the rebuilt version."
+msgstr ""

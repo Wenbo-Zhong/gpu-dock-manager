@@ -846,6 +846,14 @@ class Application(Adw.Application):
         action.connect("activate", lambda *_: self.request_quit())
         self.add_action(action)
         if not self.capture:
+            watcher = Path("/usr/bin/usb4-gpu-mutter-watch")
+            if not watcher.is_file():
+                watcher = Path(__file__).resolve().parents[1] / "tools/mutter_update_watch.py"
+            if watcher.is_file():
+                try:
+                    GLib.spawn_async([sys.executable, str(watcher), "check-installed"])
+                except GLib.Error:
+                    pass
             from .tray import Tray
             try:
                 self.tray = Tray(self.activate, self.hide_to_tray, self.request_quit)

@@ -108,6 +108,63 @@ def check(config, state_path):
         save(state_path, state)
 
 
+def check_installed():
+    """Compare the selected PoC build, or the newest cached build, with Debian's package."""
+    if not shutil.which("dpkg-query"):
+        return
+    cache = user_path("XDG_CACHE_HOME", ".cache", "")
+    session = user_path("XDG_STATE_HOME", ".local/state", "mutter-poc-session.json")
+    manifests = sorted(cache.glob("*/manifest.json"))
+    try:
+        selected = json.loads(session.read_text()).get("manifest")
+    except (FileNotFoundError, ValueError):
+        selected = None
+    if selected:
+        manifests.insert(0, Path(selected))
+
+    base = None
+    for path in manifests:
+        try:
+            manifest = json.loads(path.read_text())
+            version = manifest["installed_mutter_version"]
+            if (manifest.get("schema") != 2 or not isinstance(version, str) or not version
+                    or not (Path(manifest["prefix"]) / "lib/x86_64-linux-gnu/libmutter-18.so.0").is_file()):
+                continue
+            if selected and path == Path(selected):
+                base = version
+                break
+            if base is None or newer("apt", version, base):
+                base = version
+        except (OSError, ValueError, KeyError, TypeError):
+            continue
+    if base is None:
+        return
+
+    result = command("dpkg-query", "-W", "-f=${db:Status-Status} ${Version}",
+                     "libmutter-18-0", check=False)
+    status, _, installed = result.stdout.strip().partition(" ")
+    if result.returncode or status != "installed" or not newer("apt", installed, base):
+        return
+
+    state_path = user_path("XDG_STATE_HOME", ".local/state", "mutter-installed-notified.json")
+    state = {"installed": installed, "base": base}
+    try:
+        if json.loads(state_path.read_text()) == state:
+            return
+    except (FileNotFoundError, ValueError):
+        pass
+    skill = Path("/usr/share/usb4-gpu-manager/skills/mutter-egpu-port/SKILL.md")
+    if not skill.is_file():
+        skill = Path(__file__).resolve().parents[1] / "skills/mutter-egpu-port/SKILL.md"
+    notify = shutil.which("notify-send")
+    if notify and command(notify, "--app-name=USB4 GPU Manager",
+                          tr("Installed Mutter is newer than the experimental build"),
+                          tr("System Mutter {installed}, experimental build base {base}. Ask your AI assistant to read {skill}, adapt and rebuild the patch, validate it, then switch to the rebuilt version.").format(
+                              installed=installed, base=base, skill=skill),
+                          check=False).returncode == 0:
+        save(state_path, state)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     actions = parser.add_subparsers(dest="action", required=True)
@@ -118,6 +175,7 @@ def main():
     setup.add_argument("--repo", action="append", default=[],
                        help="APT repository URI or DNF repository ID; repeat to restrict the check")
     actions.add_parser("check")
+    actions.add_parser("check-installed")
     args = parser.parse_args()
     config_path = user_path("XDG_CONFIG_HOME", ".config", "mutter-watch.json")
     state_path = user_path("XDG_STATE_HOME", ".local/state", "mutter-watch-notified.json")
@@ -130,7 +188,9 @@ def main():
             save(config_path, config)
             print(f"Saved {config_path}. Enable usb4-gpu-mutter-watch.timer in your user session.")
         else:
-            check(json.loads(config_path.read_text()), state_path)
+            check_installed()
+            if args.action == "check" and config_path.exists():
+                check(json.loads(config_path.read_text()), state_path)
     except (OSError, ValueError, RuntimeError, ImportError, subprocess.SubprocessError) as error:
         parser.exit(1, f"{error}\n")
 

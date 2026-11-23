@@ -62,6 +62,17 @@ cat > /usr/bin/usb4-gpu-managerctl <<'SH'
 exec /usr/bin/python3 -I /usr/lib/usb4-gpu-manager/cli_entry.py "$@"
 SH
 chmod 0755 /usr/bin/usb4-gpu-manager /usr/bin/usb4-gpu-managerctl
+install -Dm 0755 "$source_dir/tools/mutter_update_watch.py" /usr/bin/usb4-gpu-mutter-watch
+for unit in "$source_dir"/data/usb4-gpu-mutter-watch.*; do
+    install -Dm 0644 "$unit" "/usr/lib/systemd/user/${unit##*/}"
+done
+share=/usr/share/usb4-gpu-manager
+install -Dm 0644 "$source_dir/skills/mutter-egpu-port/SKILL.md" "$share/skills/mutter-egpu-port/SKILL.md"
+install -Dm 0644 "$source_dir/docs/mutter-porting.md" "$share/mutter-porting.md"
+install -d "$share/mutter-poc/overlay" "$share/mutter-poc/tests"
+install -m 0644 "$source_dir"/experimental/mutter-poc/{*.py,*.json,*.patch,README.md,COPYING.GPL-2} "$share/mutter-poc/"
+install -m 0644 "$source_dir"/experimental/mutter-poc/overlay/* "$share/mutter-poc/overlay/"
+install -m 0644 "$source_dir"/experimental/mutter-poc/tests/*.[ch] "$share/mutter-poc/tests/"
 systemctl daemon-reload
 systemctl reload dbus.service
 systemctl enable --now usb4-gpu-manager.service

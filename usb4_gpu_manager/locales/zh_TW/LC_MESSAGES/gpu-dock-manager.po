@@ -1770,3 +1770,10 @@ msgid ""
 msgstr ""
 "{package} {version} 已發佈。請用 mutter-egpu-port 技能移植修補程式、編譯和驗"
 "證。"
+
+msgid "Installed Mutter is newer than the experimental build"
+msgstr "系統 Mutter 比實驗版更新"
+
+#, python-brace-format
+msgid "System Mutter {installed}, experimental build base {base}. Ask your AI assistant to read {skill}, adapt and rebuild the patch, validate it, then switch to the rebuilt version."
+msgstr "系統 Mutter 為 {installed}，實驗版基於 {base}。請讓 AI 讀取 {skill}，調整修補程式、重新編譯並驗證，然後切換到新編譯的版本。"
