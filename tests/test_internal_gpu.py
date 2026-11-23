@@ -56,10 +56,15 @@ class InternalGpuTests(unittest.TestCase):
 
     def test_module_loading_reserves_original_bindings(self):
         self.bind(self.gpu, "vfio-pci", self.bus)
-        def load(*args, **kwargs):
-            self.assertEqual(self.drivers(), ("vfio-pci", "vfio-pci"))
-            for device in (self.gpu, self.audio):
-                self.assertEqual((device / "driver_override").read_text().strip(), "vfio-pci")
+        def load(args, **kwargs):
+            if args[-1].startswith("nvidia"):
+                self.assertEqual((self.gpu / "driver_override").read_text().strip(), "nvidia")
+                self.assertEqual((self.audio / "driver_override").read_text().strip(), "snd_hda_intel")
+                self.assertEqual((self.bus / "drivers/vfio-pci/unbind").read_text(), PCI + "\n")
+            else:
+                self.assertEqual(self.drivers(), ("vfio-pci", "vfio-pci"))
+                for device in (self.gpu, self.audio):
+                    self.assertEqual((device / "driver_override").read_text().strip(), "vfio-pci")
         with (patch.object(internal_gpu, "check_idle"),
               patch.object(internal_gpu, "command", side_effect=load),
               patch.object(internal_gpu, "bind_driver", side_effect=self.bind)):
@@ -86,6 +91,21 @@ class InternalGpuTests(unittest.TestCase):
               self.assertRaisesRegex(RuntimeError, "new holder")):
             internal_gpu.switch_internal_gpu(PCI, "internal-attach", self.sysfs)
         bind.assert_not_called()
+        self.assertEqual(self.drivers(), ("vfio-pci", "vfio-pci"))
+        for device in (self.gpu, self.audio):
+            self.assertEqual((device / "driver_override").read_text().strip(), "")
+
+    def test_nvidia_load_failure_restores_vfio_pair(self):
+        self.bind(self.gpu, "vfio-pci", self.bus)
+        def load(args, **kwargs):
+            if args[-1] == "nvidia":
+                self.bind(self.gpu, None, self.bus)
+                raise RuntimeError("No such device")
+        with (patch.object(internal_gpu, "check_idle"),
+              patch.object(internal_gpu, "command", side_effect=load),
+              patch.object(internal_gpu, "bind_driver", side_effect=self.bind),
+              self.assertRaisesRegex(RuntimeError, "No such device")):
+            internal_gpu.switch_internal_gpu(PCI, "internal-attach", self.sysfs)
         self.assertEqual(self.drivers(), ("vfio-pci", "vfio-pci"))
         for device in (self.gpu, self.audio):
             self.assertEqual((device / "driver_override").read_text().strip(), "")

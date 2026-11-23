@@ -229,6 +229,11 @@ def switch_internal_gpu(pci, action, sysfs=Path("/sys"), protect_connected=False
     modules = ("nvidia", "nvidia_modeset", "nvidia_drm", "nvidia_uvm", "snd_hda_intel") if action == "internal-attach" else (VFIO,)
     if action == "internal-attach" and not graphics_changing:
         modules = ("snd_hda_intel",)
+    # NVIDIA refuses to initialize when every matching GPU is VFIO-bound.
+    # Load it only inside the rollback-protected transaction after releasing
+    # the target graphics function. Other functions remain reserved.
+    deferred_modules = tuple(module for module in modules if module.startswith("nvidia"))
+    modules = tuple(module for module in modules if module not in deferred_modules)
     # Loading modules may probe currently unbound functions. Pin each function
     # to its starting driver until the second idle check has passed. In
     # particular, NVIDIA must not claim graphics before VFIO is available.
@@ -260,6 +265,12 @@ def switch_internal_gpu(pci, action, sysfs=Path("/sys"), protect_connected=False
         for device, previous, target in changed:
             touched.append((device, previous))
             (device / "driver_override").write_text(target + "\n")
+        if deferred_modules:
+            if driver(gpu):
+                (gpu / "driver" / "unbind").write_text(gpu.name + "\n")
+            for module in deferred_modules:
+                if not (sysfs / "module" / module.replace("-", "_")).exists():
+                    command(["modprobe", "--ignore-install", module], timeout=10)
         for device, _, target in reversed(changed):
             bind_driver(device, target, bus)
         for device, _ in touched:
