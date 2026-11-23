@@ -96,7 +96,8 @@ def child():
 def run_smoke(manifest, render_only_pcis=None):
     check_gi(manifest)
     work = Path(manifest["work"])
-    with tempfile.TemporaryDirectory(prefix="headless-smoke-", dir=work) as directory:
+    # Wayland sockets must fit in sockaddr_un even for long build paths.
+    with tempfile.TemporaryDirectory(prefix="mutter-smoke-", dir="/tmp") as directory:
         home = Path(directory)
         runtime = home / "run"
         runtime.mkdir(mode=0o700)

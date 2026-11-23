@@ -209,3 +209,15 @@ The v5 build passed 136 Python tests, 10 ASan/UBSan C tests, library-identity ch
 GPU-free isolated GNOME startup and AMD/internal-NVIDIA render-only startup. These
 are not a live GNOME switch or successful internal-GPU unload. See
 `docs/reports/evidence/20261113-mutter-internal-v5-build.json` in the project root.
+
+## Ubuntu 50.1-0ubuntu2.5 重编与外卡引用追踪
+
+使用与系统包一致的 Ubuntu 源码重新编译 DRM-only 实验版。补丁指纹校验、GI 库身份校验和隔离 GNOME 启动测试通过。隔离测试使用短临时目录，避免构建路径过长导致 Wayland 套接字创建失败。用户会话可以用 `--persistent` 在每次登录时尝试实验版。启动预检失败时当次使用系统 Mutter，实验会话超时或异常退出后下次登录回退。
+
+双卡实验可以在会话状态文件中设置 `"trace_external": true`，下次登录优先按已登记的外卡 PCI 地址解析 DRM 节点。该选项只改变引用日志过滤目标，外卡仍须满足现有设备身份和安全检查。
+
+2026-11-23 在 AMD 核显驱动内屏、RTX PRO 5000 已接入且四个 DP 口均未接屏的条件下，重新登录后观察到：
+
+- Mutter 日志中的外卡 KMS hold 从 1 降到 0，设备文件引用归零，FD 关闭。
+- 随后的 `reclaim` 预检未发现外卡渲染缓存或 Shell 持有的外卡句柄，因此没有执行缓存回收。
+- 管理服务完整扫描时，Shell、logind 和 PID 1 已无外卡占用，Ptyxis 仍持有外卡渲染和 NVIDIA 设备节点。本次记录截至占用扫描。实际安全移除与合盖恢复仍待验证。

@@ -54,6 +54,11 @@ def prepare_environment(state):
                             and (path / 'boot_vga').read_text().strip() == '0'
                             and (path / 'removable').read_text().strip() == 'removable'):
                         environment['MUTTER_GPU_RELEASE_POC_DRM_ONLY_PCI'] = external
+                        if state.get('trace_external'):
+                            external_cards = [node.name for node in (path / 'drm').glob('card[0-9]*')
+                                              if re.fullmatch(r'card[0-9]+', node.name)]
+                            if len(external_cards) == 1:
+                                environment['MUTTER_GPU_RELEASE_POC_TRACE_DEVICE'] = '/dev/dri/' + external_cards[0]
                 except OSError:
                     pass
         elif not absent and (len(cards) != 1 or

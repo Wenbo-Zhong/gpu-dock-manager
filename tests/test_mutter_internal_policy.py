@@ -68,6 +68,12 @@ class MutterInternalPolicyTests(unittest.TestCase):
             self.assertEqual(env['MUTTER_GPU_RELEASE_POC_CLEAN_CHILD_ENV'], '1')
             self.assertEqual(env['MUTTER_GPU_RELEASE_POC_ORIGINAL_DATA_DIRS'], '/usr/share')
             validate.assert_called_once_with(self.pci)
+            (external / 'boot_vga').write_text('0')
+            (external / 'drm/card12').mkdir(parents=True)
+            state['trace_external'] = True
+            env = launch_shell.prepare_environment(state)
+            self.assertEqual(env['MUTTER_GPU_RELEASE_POC_TRACE_DEVICE'], '/dev/dri/card12')
+            self.assertEqual(env['MUTTER_GPU_RELEASE_POC_DRM_ONLY_PCI'], state['external_pci'])
             manifest['internal_4070_drm_only'] = False
             with self.assertRaises(RuntimeError):
                 launch_shell.prepare_environment(state)
