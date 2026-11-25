@@ -1571,3 +1571,15 @@ msgstr ""
 #, python-brace-format
 msgid "System Mutter {installed}, experimental build base {base}. Ask your AI assistant to read {skill}, adapt and rebuild the patch, validate it, then switch to the rebuilt version."
 msgstr ""
+
+msgid "Automatic GPU management"
+msgstr ""
+
+msgid "Control automatic GPU connection, switching and resume recovery. Manual controls stay available."
+msgstr ""
+
+msgid "Automatic GPU management enabled"
+msgstr ""
+
+msgid "Automatic GPU management paused"
+msgstr ""

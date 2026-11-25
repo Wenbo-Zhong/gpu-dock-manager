@@ -24,6 +24,22 @@ PROFILE = {"schema": 1, "enabled": True, "target": {"vendor": "0x10de", "device"
 
 
 class SafetyTests(unittest.TestCase):
+    def test_paused_automation_survives_controller_restart(self):
+        with tempfile.TemporaryDirectory() as directory:
+            setting = Path(directory) / "automation.json"
+            with patch.object(controller, "AUTOMATION_CONFIG", setting):
+                manager = controller.Controller()
+                manager.perform("set-automation", {"enabled": False})
+                restarted = controller.Controller()
+                self.assertFalse(restarted.get_status()["automation_enabled"])
+                with (patch.object(restarted, "refresh", return_value={"internal_gpu": True}) as refresh,
+                      patch.object(restarted, "_tick_internal_policy") as policy):
+                    restarted.tick()
+                    refresh.assert_called_once()
+                    policy.assert_not_called()
+                restarted.perform("set-automation", {"enabled": True})
+                self.assertTrue(restarted.get_status()["automation_enabled"])
+
     def test_exiting_process_does_not_abort_gpu_holder_scan(self):
         with tempfile.TemporaryDirectory() as directory:
             proc = Path(directory)

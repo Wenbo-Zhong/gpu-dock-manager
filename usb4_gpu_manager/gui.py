@@ -325,6 +325,13 @@ class Window(Adw.ApplicationWindow):
         self.deployment_banner = Adw.Banner(title="", revealed=True)
         page.append(self.deployment_banner)
         group = Adw.PreferencesGroup(title=tr('Device policy'))
+        automation = row(tr('Automatic GPU management'),
+                         tr('Control automatic GPU connection, switching and resume recovery. Manual controls stay available.'))
+        self.automation_switch = Gtk.Switch(valign=Gtk.Align.CENTER, sensitive=False)
+        self.automation_switch.connect("state-set", self.set_automation)
+        automation.add_suffix(self.automation_switch)
+        automation.set_activatable_widget(self.automation_switch)
+        group.add(automation)
         target_row = row(tr('Target external GPU'), tr('NVIDIA supported initially; the selected target will not be isolated.'))
         self.target_select = Gtk.DropDown(model=Gtk.StringList.new([tr('No device detected yet')]), valign=Gtk.Align.CENTER)
         self.target_select.set_size_request(270, -1)
@@ -518,6 +525,14 @@ class Window(Adw.ApplicationWindow):
         self.deploy_button.set_sensitive(connected and fresh and bool(self.form_gpus or data.get("gpus")) and not busy)
         self.rollback_button.set_sensitive(connected and deploy.get("rollback_available", False) and not busy)
         self.deployment_banner.set_title(tr('Configuration deployed · Restart required') if deploy.get("restart_required") else tr('Unified management enabled') if deploy.get("managed") else tr('Device policy not migrated; existing system configuration remains active'))
+        automatic = data.get("automation_enabled")
+        self.automation_switch.handler_block_by_func(self.set_automation)
+        try:
+            self.automation_switch.set_active(automatic is True)
+            self.automation_switch.set_state(automatic is True)
+        finally:
+            self.automation_switch.handler_unblock_by_func(self.set_automation)
+        self.automation_switch.set_sensitive(connected and isinstance(automatic, bool) and not busy and not self.operation_pending)
         self.update_devices(data)
         self.update_form(data)
         events = data.get("events", [])
@@ -755,6 +770,10 @@ class Window(Adw.ApplicationWindow):
         dialog.set_response_appearance("confirm", Adw.ResponseAppearance.DESTRUCTIVE)
         dialog.connect("response", lambda _, answer: self.submit("rollback") if answer == "confirm" else None)
         dialog.present()
+
+    def set_automation(self, switch, enabled):
+        self.submit("set-automation", {"enabled": enabled})
+        return True
 
     def submit(self, action, options=None):
         self.operation_pending = True

@@ -96,14 +96,14 @@ class Service:
             if action in {"attach", "detach", "queue-detach", *INTERNAL_ACTIONS} and not self.controller.get_status().get("can_mutate_devices", False):
                 raise RuntimeError(tr('Detailed device status is stale or driver cleanup is incomplete. Recover the driver first.'))
             authorization = ("manage-internal" if action in INTERNAL_ACTIONS else
-                             "configure" if action in {"deploy", "rollback"} else "manage")
+                             "configure" if action in {"deploy", "rollback", "set-automation"} else "manage")
             if not self.authorized(sender, authorization):
                 raise PermissionError(tr('Administrator authorization was denied.'))
             if action == "cancel-detach":
                 if options:
                     raise ValueError(tr('Cancel takes no options.'))
                 value = self.controller.cancel()
-            elif action in INTERNAL_ACTIONS:
+            elif action in INTERNAL_ACTIONS or action == "set-automation":
                 # Keep the session client's audio-release scope alive until the
                 # driver operation actually finishes, including failure rollback.
                 value = self.controller.perform(action, options)

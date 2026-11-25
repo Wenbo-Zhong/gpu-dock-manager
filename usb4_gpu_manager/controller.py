@@ -17,6 +17,7 @@ from .presence import observe, remember_transport
 from .system import atomic_write, command, load_json, read, stalled_commands
 
 LOG = logging.getLogger("usb4-gpu-manager")
+AUTOMATION_CONFIG = Path("/etc/usb4-gpu-manager/automation.json")
 IGNORE_RULE = Path("/run/udev/rules.d/99-usb4-gpu-manager-detach.rules")
 IGNORE_STATE = Path("/run/usb4-gpu-manager/ignore.json")
 
@@ -52,6 +53,9 @@ class Controller:
 
     def active_profile(self):
         return load_json(deployment.CONFIG, {}) or {}
+
+    def automation_enabled(self):
+        return load_json(AUTOMATION_CONFIG, {}) != {"enabled": False}
 
     def refresh(self):
         with self.device_lock:
@@ -90,7 +94,7 @@ class Controller:
         with self.lock:
             data = dict(self.cached, operation=dict(self.operation), events=list(self.events), last_error=self.last_error)
         profile = self.active_profile()
-        data.update(service_connected=True, profile=profile,
+        data.update(service_connected=True, profile=profile, automation_enabled=self.automation_enabled(),
                     deployment={"managed": bool(profile),
                                 "restart_required": bool(profile.get("deployed_boot") == read("/proc/sys/kernel/random/boot_id")),
                                 "rollback_available": load_json(deployment.STATE / "latest-backup.json") is not None})
@@ -116,6 +120,8 @@ class Controller:
 
     def tick(self):
         data = self.refresh()
+        if not self.automation_enabled():
+            return
         if data.get("internal_gpu"):
             self._tick_internal_policy(observe(data))
             return
@@ -142,7 +148,8 @@ class Controller:
             return
         if profile.get("keep_path_awake", True):
             with self.device_lock:
-                self._keep_awake(gpu)
+                if self.automation_enabled():
+                    self._keep_awake(gpu)
         resource = read(Path(gpu["path"]) / "resource", "").splitlines()
         if not resource:
             return
@@ -163,6 +170,8 @@ class Controller:
         if not self.operation_lock.acquire(blocking=False):
             return
         try:
+            if not self.automation_enabled():
+                return
             self._attach(profile, rescan=False)
             self.auto_pending = False
             self.last_error = ""
@@ -210,6 +219,8 @@ class Controller:
             return
         try:
             with self.device_lock:
+                if not self.automation_enabled():
+                    return
                 internal = data["internal_gpu"]
                 gpu = data.get("target")
                 profile = self._external_profile(data)
@@ -383,7 +394,7 @@ class Controller:
 
     def perform(self, action, options):
         allowed = {"attach": set(), "detach": {"expected_pci"},
-                   "queue-detach": {"expected_pci"}, "deploy": {"profile"}, "rollback": set(),
+                   "queue-detach": {"expected_pci"}, "deploy": {"profile"}, "rollback": set(), "set-automation": {"enabled"},
                    **dict.fromkeys(INTERNAL_ACTIONS, {"expected_pci"})}
         if action not in allowed or not isinstance(options, dict) or set(options) - allowed[action]:
             raise ValueError(tr('Unsupported operation or options.'))
@@ -395,8 +406,19 @@ class Controller:
         try:
             if self.sleeping and action in {"attach", "detach", "queue-detach", *INTERNAL_ACTIONS}:
                 raise RuntimeError(tr('The system is preparing to sleep. Resume before operating the GPU.'))
-            profile, gpu = (None, None) if action in {"deploy", "rollback", *INTERNAL_ACTIONS} else self._profile_and_gpu()
-            if action == "deploy":
+            profile, gpu = (None, None) if action in {"deploy", "rollback", "set-automation", *INTERNAL_ACTIONS} else self._profile_and_gpu()
+            if action == "set-automation":
+                enabled = options.get("enabled")
+                if type(enabled) is not bool:
+                    raise ValueError(tr('Unsupported operation or options.'))
+                with self.device_lock:
+                    atomic_write(AUTOMATION_CONFIG, json.dumps({"enabled": enabled}) + "\n")
+                    self.policy_state = self.policy_candidate = None
+                    self.signature, self.stable_since = None, 0
+                    self.retry_after = 0
+                    self.auto_pending = True
+                message = tr('Automatic GPU management enabled') if enabled else tr('Automatic GPU management paused')
+            elif action == "deploy":
                 message = deployment.deploy(options.get("profile"), gpu_inventory())
             elif action == "rollback":
                 message = deployment.rollback()

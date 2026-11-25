@@ -1905,3 +1905,15 @@ msgstr "Installed Mutter is newer than the experimental build"
 #, python-brace-format
 msgid "System Mutter {installed}, experimental build base {base}. Ask your AI assistant to read {skill}, adapt and rebuild the patch, validate it, then switch to the rebuilt version."
 msgstr "System Mutter {installed}, experimental build base {base}. Ask your AI assistant to read {skill}, adapt and rebuild the patch, validate it, then switch to the rebuilt version."
+
+msgid "Automatic GPU management"
+msgstr "Automatic GPU management"
+
+msgid "Control automatic GPU connection, switching and resume recovery. Manual controls stay available."
+msgstr "Control automatic GPU connection, switching and resume recovery. Manual controls stay available."
+
+msgid "Automatic GPU management enabled"
+msgstr "Automatic GPU management enabled"
+
+msgid "Automatic GPU management paused"
+msgstr "Automatic GPU management paused"

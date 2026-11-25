@@ -1777,3 +1777,15 @@ msgstr "系統 Mutter 比實驗版更新"
 #, python-brace-format
 msgid "System Mutter {installed}, experimental build base {base}. Ask your AI assistant to read {skill}, adapt and rebuild the patch, validate it, then switch to the rebuilt version."
 msgstr "系統 Mutter 為 {installed}，實驗版基於 {base}。請讓 AI 讀取 {skill}，調整修補程式、重新編譯並驗證，然後切換到新編譯的版本。"
+
+msgid "Automatic GPU management"
+msgstr "自動顯示卡管理"
+
+msgid "Control automatic GPU connection, switching and resume recovery. Manual controls stay available."
+msgstr "控制顯示卡自動連線、切換及喚醒恢復。仍可手動操作。"
+
+msgid "Automatic GPU management enabled"
+msgstr "已啟用自動顯示卡管理"
+
+msgid "Automatic GPU management paused"
+msgstr "已暫停自動顯示卡管理"
