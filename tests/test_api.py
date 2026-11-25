@@ -9,6 +9,22 @@ from usb4_gpu_manager.daemon import Service
 
 
 class InhibitorTests(unittest.TestCase):
+    def test_automation_request_reaches_controller_through_dbus_dispatch(self):
+        service = Service.__new__(Service)
+        service.controller = Mock()
+        service.authorized = Mock(return_value=True)
+        service.pool = Mock()
+        service.pool.submit.side_effect = lambda callback, *args: callback(*args)
+        service.reply = Mock()
+        invocation = Mock()
+        parameters = GLib.Variant("(ss)", ("set-automation", '{"enabled": false}'))
+        with patch("usb4_gpu_manager.daemon.GLib.idle_add",
+                   side_effect=lambda callback, *args: callback(*args)):
+            service.handle(None, "sender", None, None, "Perform", parameters, invocation)
+        service.authorized.assert_called_once_with("sender", "manage")
+        service.controller.perform.assert_called_once_with("set-automation", {"enabled": False})
+        service.reply.assert_called_once_with(invocation, service.controller.perform.return_value)
+
     def test_internal_inspection_waits_briefly_for_refresh_lock(self):
         service = Service.__new__(Service)
         service.controller = Mock()

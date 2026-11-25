@@ -68,7 +68,7 @@ class Service:
             self.pool.submit(self._preview, parameters.unpack()[0], invocation)
         elif method == "Perform":
             action, raw = parameters.unpack()
-            if len(raw) > 16384 or action not in {"attach", "detach", "queue-detach", "cancel-detach", "deploy", "rollback", *INTERNAL_ACTIONS}:
+            if len(raw) > 16384 or action not in {"attach", "detach", "queue-detach", "cancel-detach", "deploy", "rollback", "set-automation", *INTERNAL_ACTIONS}:
                 self.reply(invocation, error=tr('Unsupported request.'))
                 return
             self.pool.submit(self._perform, sender, action, raw, invocation)
@@ -96,14 +96,16 @@ class Service:
             if action in {"attach", "detach", "queue-detach", *INTERNAL_ACTIONS} and not self.controller.get_status().get("can_mutate_devices", False):
                 raise RuntimeError(tr('Detailed device status is stale or driver cleanup is incomplete. Recover the driver first.'))
             authorization = ("manage-internal" if action in INTERNAL_ACTIONS else
-                             "configure" if action in {"deploy", "rollback", "set-automation"} else "manage")
+                             "configure" if action in {"deploy", "rollback"} else "manage")
             if not self.authorized(sender, authorization):
                 raise PermissionError(tr('Administrator authorization was denied.'))
             if action == "cancel-detach":
                 if options:
                     raise ValueError(tr('Cancel takes no options.'))
                 value = self.controller.cancel()
-            elif action in INTERNAL_ACTIONS or action == "set-automation":
+            elif action == "set-automation":
+                value = self.controller.perform(action, options)
+            elif action in INTERNAL_ACTIONS:
                 # Keep the session client's audio-release scope alive until the
                 # driver operation actually finishes, including failure rollback.
                 value = self.controller.perform(action, options)
