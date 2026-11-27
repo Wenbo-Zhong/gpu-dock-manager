@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-"""Compare AMD-only, NVIDIA GBM-only, and mixed EGL use in a disposable child.
+"""在一次性子进程中对比 AMD、NVIDIA GBM 与混合 EGL，隔离驱动资源生命周期。
 
 Uses surfaceless GLES contexts. No windows, drawing, modesets or GNOME mutation.
 """

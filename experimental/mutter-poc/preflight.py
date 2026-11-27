@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-"""Check native/GI library identity in a child without initializing any GPU."""
+"""在子进程校验原生库与 GI 类型库身份，避免校验阶段初始化 GPU。"""
 import argparse
 import ctypes
 import json

@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-"""Verify the exact Mutter base and prepare a distro source build."""
+"""验证发行版 Mutter 的精确源码基线，再准备补丁构建，拒绝模糊版本匹配。"""
 import argparse
 from datetime import datetime
 from email.utils import format_datetime

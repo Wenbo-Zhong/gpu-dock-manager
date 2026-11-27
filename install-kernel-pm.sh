@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# 旧版内核睡眠策略安装入口；与新管理器并存时应先预览迁移清单。
 set -euo pipefail
 [[ $EUID -eq 0 ]] || { echo 'Run this script with sudo.' >&2; exit 1; }
 source_dir=$(cd -- "$(dirname -- "$0")" && pwd)

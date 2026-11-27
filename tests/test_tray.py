@@ -10,6 +10,8 @@ class TrayTests(unittest.TestCase):
     def tray(self):
         tray = Tray.__new__(Tray)
         tray.show, tray.hide, tray.quit = Mock(), Mock(), Mock()
+        tray.ready, tray.closed = False, False
+        tray.generation, tray.owner = 0, None
         return tray
 
     def test_menu_layout_and_actions(self):
@@ -32,6 +34,21 @@ class TrayTests(unittest.TestCase):
         tray.vanished()
         self.assertFalse(tray.ready)
         tray.show.assert_called_once()
+
+    def test_late_registration_cannot_revive_vanished_watcher(self):
+        tray = self.tray()
+        bus = Mock()
+        tray.appeared(bus, "watcher", ":1.1")
+        old_callback = bus.call.call_args.args[-1]
+        tray.vanished()
+        old_callback(bus, Mock())
+        self.assertFalse(tray.ready)
+        tray.appeared(bus, "watcher", ":1.2")
+        current_callback = bus.call.call_args.args[-1]
+        old_callback(bus, Mock())
+        self.assertFalse(tray.ready)
+        current_callback(bus, Mock())
+        self.assertTrue(tray.ready)
 
     def test_activation_restores_window_and_protocol_xml_parses(self):
         from gi.repository import Gio

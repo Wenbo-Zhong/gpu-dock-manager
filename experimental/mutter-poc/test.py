@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-"""Run the actual PoC C interface on a private D-Bus with inert GPU stubs."""
+"""在私有 D-Bus 上用惰性 GPU 桩验证真实 C 接口，避免接触宿主显卡。"""
 import os
 from pathlib import Path
 import shlex

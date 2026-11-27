@@ -1,4 +1,4 @@
-"""Fast transport observation, independent of DRM/NVML and device-operation locks."""
+"""快速观察 USB4 物理链路；不依赖 DRM/NVML，用实时路由纠正过期设备快照。"""
 
 from .i18n import tr
 import copy

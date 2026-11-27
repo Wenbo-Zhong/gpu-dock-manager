@@ -1,8 +1,9 @@
-"""Guarded driver switching for the internal RTX 4070 and its HDMI audio."""
+"""内置 RTX 4070 与 HDMI 音频成对切换；修改前检查占用，失败恢复原绑定。"""
 
 from .i18n import tr
 from pathlib import Path
 import re
+import subprocess
 
 from .system import command, read, gpu_holder_hint
 
@@ -238,6 +239,7 @@ def switch_internal_gpu(pci, action, sysfs=Path("/sys"), protect_connected=False
     # to its starting driver until the second idle check has passed. In
     # particular, NVIDIA must not claim graphics before VFIO is available.
     reserved = []
+    module_still_running = False
     try:
         for device, previous in zip(devices, starting):
             reserved.append(device)
@@ -253,9 +255,14 @@ def switch_internal_gpu(pci, action, sysfs=Path("/sys"), protect_connected=False
             raise RuntimeError(tr('Driver state changed. Refresh and try again.'))
         if loaded_module:
             check_idle(gpu, audio, group, sysfs, protect_connected, graphics_changing=graphics_changing)
+    except subprocess.TimeoutExpired as error:
+        module_still_running = getattr(error, "process_still_running", False)
+        raise
     finally:
-        for device in reserved:
-            (device / "driver_override").write_text("\n")
+        # 内核中的 modprobe 尚未退出时，不能解除预约让它异步抢占设备。
+        if not module_still_running:
+            for device in reserved:
+                (device / "driver_override").write_text("\n")
 
     changed = [(device, previous, target) for device, previous, target in zip(devices, starting, desired)
                if previous != target]
@@ -275,7 +282,10 @@ def switch_internal_gpu(pci, action, sysfs=Path("/sys"), protect_connected=False
             bind_driver(device, target, bus)
         for device, _ in touched:
             (device / "driver_override").write_text("\n")
-    except (OSError, RuntimeError) as error:
+    except (OSError, RuntimeError, subprocess.TimeoutExpired) as error:
+        if getattr(error, "process_still_running", False):
+            # 活进程仍可能触发 probe，保留 override 并交给重启恢复，禁止并发回绑。
+            raise RuntimeError(tr('4070 driver switch timed out. Check the device state; restart if needed to restore the boot configuration.')) from error
         rollback_errors = []
         for device, previous in reversed(touched):
             try:

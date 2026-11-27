@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-"""Compare repeated GBM context cleanup on one thread versus fresh threads.
+"""对比同线程重复清理与新线程清理 GBM 上下文，区分线程缓存和资源泄漏。
 
 All EGL work happens in a disposable child. No compositor resources are changed.
 """

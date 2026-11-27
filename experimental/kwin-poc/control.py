@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-"""GPL-3.0-only. Read-only inspection, or one explicitly requested DRM change event."""
+"""GPL-3.0-only。只读检查 KWin，或发送一次用户明确请求的 DRM change 事件。"""
 import argparse
 import json
 import os

@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-"""Reproduce Mutter's GBM/GLES detection in a disposable process, without windows.
+"""在一次性进程中复现 Mutter 的 GBM/GLES 探测，不创建窗口或改动桌面资源。
 
 No modesets, surfaces, rendering, compositor injection or compositor FD changes.
 The optional context is current only on the probe thread, with no EGL surfaces.

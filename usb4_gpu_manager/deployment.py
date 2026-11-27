@@ -1,4 +1,4 @@
-"""Versioned, reversible Ubuntu/NVIDIA configuration deployment."""
+"""Ubuntu/NVIDIA 配置事务：版本化备份、失败恢复与跨重启保护。"""
 
 from .i18n import tr
 import base64
@@ -9,7 +9,7 @@ import re
 import time
 
 from .hardware import target_gpu
-from .system import atomic_write, command, load_json, read
+from .system import atomic_write, command, load_json, read, stalled_commands
 
 CONFIG = Path("/etc/usb4-gpu-manager/profile.json")
 STATE = Path("/var/lib/usb4-gpu-manager")
@@ -28,6 +28,46 @@ LEGACY = [
     "/etc/systemd/system/nvidia-resume.service.d/egpu-resume.conf",
     "/etc/systemd/system/nvidia-resume.service.d/zz-egpu-display-status.conf",
 ]
+
+
+def status(profile=None):
+    """恢复日志独立于 profile，首次回滚删除配置后也不能丢失重启保护。"""
+    profile = profile or {}
+    pending = (STATE / "deployment-pending.json").exists()
+    marker_path = STATE / "restart-required.json"
+    marker = load_json(marker_path, {})
+    boot = read("/proc/sys/kernel/random/boot_id")
+    restart = marker_path.exists() and (
+        not isinstance(marker, dict) or not marker.get("boot") or boot == "unknown"
+        or marker["boot"] == boot)
+    return {"managed": bool(profile) or pending,
+            "restart_required": pending or restart or bool(profile.get("deployed_boot") == boot),
+            "recovery_pending": pending,
+            "rollback_available": pending or (STATE / "latest-backup.json").exists()}
+
+
+def _begin_recovery(directory, action):
+    # 必须先持久化备份指针，再修改系统文件；磁盘满时仍能找到恢复入口。
+    atomic_write(STATE / "deployment-pending.json",
+                 json.dumps({"path": str(directory), "action": action}), 0o600)
+    atomic_write(STATE / "restart-required.json",
+                 json.dumps({"boot": read("/proc/sys/kernel/random/boot_id")}), 0o600)
+
+
+def _restore_transaction(directory):
+    if stalled_commands():
+        raise RuntimeError(tr('A driver call is still blocked in the kernel. Duplicate calls are paused; save your work and restart to recover.'))
+    restore_backup(directory)
+    command(["systemctl", "daemon-reload"])
+    command(["udevadm", "control", "--reload-rules"])
+    command(["update-initramfs", "-u", "-k", "all"], timeout=600)
+    previous = load_json(directory / "previous-backup.json")
+    if previous:
+        atomic_write(STATE / "latest-backup.json", json.dumps(previous), 0o600)
+    else:
+        (STATE / "latest-backup.json").unlink(missing_ok=True)
+    # 只有配置、initramfs 和备份链全部恢复成功才提交；失败保留日志供重试。
+    (STATE / "deployment-pending.json").unlink(missing_ok=True)
 
 
 def suggested_profile(gpus):
@@ -147,6 +187,8 @@ def restore_backup(directory):
 
 
 def deploy(profile, gpus):
+    if (STATE / "deployment-pending.json").exists():
+        raise RuntimeError("上一次部署或恢复尚未完成，请先执行恢复操作。")
     details = plan(profile, gpus)
     params = command(["modinfo", "-p", "nvidia"]).stdout
     if "NVreg_UseKernelSuspendNotifiers:" not in params or "MIT" not in command(["modinfo", "-F", "license", "nvidia"]).stdout:
@@ -163,6 +205,7 @@ def deploy(profile, gpus):
     previous_latest = load_json(STATE / "latest-backup.json")
     if previous_latest:
         atomic_write(directory / "previous-backup.json", json.dumps(previous_latest), 0o600)
+    _begin_recovery(directory, "deploy")
     try:
         for path in LEGACY:
             Path(path).unlink(missing_ok=True)
@@ -174,31 +217,24 @@ def deploy(profile, gpus):
         command(["udevadm", "control", "--reload-rules"])
         command(["update-initramfs", "-u", "-k", "all"], timeout=600)
         atomic_write(STATE / "latest-backup.json", json.dumps({"path": str(directory)}), 0o600)
-    except Exception:
-        restore_backup(directory)
-        command(["systemctl", "daemon-reload"], check=False)
-        command(["udevadm", "control", "--reload-rules"], check=False)
-        recovery = command(["update-initramfs", "-u", "-k", "all"], timeout=600, check=False)
-        if recovery.returncode:
-            raise RuntimeError(tr('Deployment failed and configuration was restored, but rebuilding initramfs failed. Check /boot space and run sudo update-initramfs -u -k all.'))
-        if previous_latest:
-            atomic_write(STATE / "latest-backup.json", json.dumps(previous_latest), 0o600)
+        (STATE / "deployment-pending.json").unlink(missing_ok=True)
+    except Exception as error:
+        try:
+            _restore_transaction(directory)
+        except Exception as recovery_error:
+            raise RuntimeError(f"{error}; recovery pending: {recovery_error}") from error
         raise
     return tr('Deployment complete; existing configuration backed up. Save your work and restart to enable unified management.')
 
 
 def rollback():
-    latest = load_json(STATE / "latest-backup.json", {})
+    pending_path = STATE / "deployment-pending.json"
+    latest = load_json(pending_path if pending_path.exists() else STATE / "latest-backup.json", {})
+    if not isinstance(latest, dict):
+        raise RuntimeError(tr('No complete deployment backup is available.'))
     directory = Path(latest.get("path", "/nonexistent"))
     if directory.parent != STATE / "backups" or not directory.is_dir():
         raise RuntimeError(tr('No manager deployment is available to roll back.'))
-    restore_backup(directory)
-    command(["systemctl", "daemon-reload"])
-    command(["udevadm", "control", "--reload-rules"])
-    command(["update-initramfs", "-u", "-k", "all"], timeout=600)
-    previous = load_json(directory / "previous-backup.json")
-    if previous:
-        atomic_write(STATE / "latest-backup.json", json.dumps(previous), 0o600)
-    else:
-        (STATE / "latest-backup.json").unlink(missing_ok=True)
+    _begin_recovery(directory, "rollback")
+    _restore_transaction(directory)
     return tr('Pre-deployment configuration restored. Restart your computer.')

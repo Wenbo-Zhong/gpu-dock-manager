@@ -1,4 +1,6 @@
 
+"""会话客户端：封装服务调用、显示适配和音频释放，断连时提供只读快照。"""
+
 from .i18n import tr
 from .i18n import localize_payload, translate_text
 import json

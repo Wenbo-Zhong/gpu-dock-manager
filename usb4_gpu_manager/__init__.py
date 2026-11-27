@@ -1,4 +1,4 @@
-"""USB4 GPU Manager: native UI and a privileged, local-only manager."""
+"""USB4 GPU Manager：原生会话界面与本地特权服务共用的协议常量。"""
 __version__ = "0.1.2"
 BUS_NAME = "io.github.usb4gpumanager.Manager"
 BUS_PATH = "/io/github/usb4gpumanager/Manager"

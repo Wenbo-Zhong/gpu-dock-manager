@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-"""GPL-3.0-only. Extract gettext messages and maintain standard PO/MO catalogs."""
+"""GPL-3.0-only。提取 gettext 消息并维护 PO/MO；界面原文与翻译目录分离。"""
 import argparse
 import ast
 import json

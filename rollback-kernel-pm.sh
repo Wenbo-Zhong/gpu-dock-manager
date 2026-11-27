@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# 恢复旧版内核睡眠策略；恢复磁盘配置后仍需重启使 initramfs 生效。
 set -euo pipefail
 [[ $EUID -eq 0 ]] || { echo 'Run this script with sudo.' >&2; exit 1; }
 state=/var/lib/egpu-wayland-kernel-pm-test

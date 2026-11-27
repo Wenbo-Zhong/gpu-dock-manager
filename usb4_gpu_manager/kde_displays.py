@@ -1,4 +1,4 @@
-"""KScreen session adapter; never detach a GPU or change privileged state."""
+"""KScreen 会话适配：临时调整桌面输出，不执行 PCI 移除或特权配置修改。"""
 
 from .i18n import tr
 import copy

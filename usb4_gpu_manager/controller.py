@@ -1,4 +1,4 @@
-"""Manager state machine. All mutations are serialized and performed by root."""
+"""管理状态机：操作锁串行化请求，设备锁保护硬件快照与修改的一致性。"""
 
 from .i18n import tr
 from collections import deque
@@ -14,7 +14,7 @@ from .hardware import detach_check, holders, nvidia_metrics, internal_metrics_re
 from .internal_gpu import ACTIONS as INTERNAL_ACTIONS, HOST_DRIVERS, VFIO
 from .probe import bounded_inventory as gpu_inventory, bounded_snapshot as snapshot, device_action, internal_device_action
 from .presence import observe, remember_transport
-from .system import atomic_write, command, load_json, read, stalled_commands
+from .system import atomic_write, command, load_json, read, stalled_commands, sleep_inhibitor
 
 LOG = logging.getLogger("usb4-gpu-manager")
 AUTOMATION_CONFIG = Path("/etc/usb4-gpu-manager/automation.json")
@@ -26,6 +26,7 @@ class Controller:
     def __init__(self):
         self.lock = threading.RLock()
         self.operation_lock = threading.Lock()
+        self.operation_reservation = None
         self.device_lock = threading.RLock()
         self.events = deque(maxlen=100)
         self.cached = {}
@@ -78,9 +79,7 @@ class Controller:
         self.metrics = [metric for metric in self.metrics if metric["pci"] in eligible]
         data.update({"service_connected": True, "metrics": self.metrics, "services": self.units,
                      "suggested_profile": deployment.suggested_profile(data["gpus"]),
-                     "deployment": {"managed": bool(profile),
-                                    "restart_required": bool(profile.get("deployed_boot") == read("/proc/sys/kernel/random/boot_id")),
-                                    "rollback_available": (deployment.STATE / "latest-backup.json").exists()},
+                     "deployment": deployment.status(profile),
                      "kernel": read("/proc/sys/kernel/osrelease"),
                      "session_management": "kernel-notifier",
                      "last_resume": self.last_resume, "last_error": self.last_error})
@@ -95,9 +94,7 @@ class Controller:
             data = dict(self.cached, operation=dict(self.operation), events=list(self.events), last_error=self.last_error)
         profile = self.active_profile()
         data.update(service_connected=True, profile=profile, automation_enabled=self.automation_enabled(),
-                    deployment={"managed": bool(profile),
-                                "restart_required": bool(profile.get("deployed_boot") == read("/proc/sys/kernel/random/boot_id")),
-                                "rollback_available": load_json(deployment.STATE / "latest-backup.json") is not None})
+                    deployment=deployment.status(profile))
         data = observe(data)
         if stalled_commands():
             data["can_mutate_devices"] = False
@@ -120,12 +117,21 @@ class Controller:
 
     def tick(self):
         data = self.refresh()
+        data = observe(data)
+        routers = {r["uuid"] for r in data["usb4"] if not r["is_host"]}
+        # 物理拔线必须先清除手动移除抑制，再进入断开分支；同 UUID 重插仍可连接。
+        if self.detached_routers and not self.detached_routers.issubset(routers):
+            self.detached_routers = None
+            self.event(tr('USB4 device disconnected; automatic connection is allowed again.'))
+        if data.get("transport", {}).get("state") == "disconnected":
+            self.signature, self.stable_since = None, 0
+            self.auto_pending, self.retry_after = True, 0
         if not self.automation_enabled():
             return
         if data.get("internal_gpu"):
-            self._tick_internal_policy(observe(data))
+            self._tick_internal_policy(data)
             return
-        if observe(data).get("transport", {}).get("state") == "disconnected":
+        if data.get("transport", {}).get("state") == "disconnected":
             return
         profile, gpu = data["profile"], data.get("target")
         if self.sleeping or not profile.get("enabled") or data["deployment"]["restart_required"]:
@@ -285,6 +291,17 @@ class Controller:
             return self._attach_locked(profile, rescan)
 
     def _attach_locked(self, profile, rescan=True):
+        self._ensure_awake()
+        # 自动连接与手动连接使用同一睡眠保护，覆盖 BAR 稳定等待和驱动绑定。
+        with sleep_inhibitor():
+            self._ensure_awake()
+            return self._attach_awake(profile, rescan)
+
+    def _ensure_awake(self):
+        if self.sleeping:
+            raise RuntimeError(tr('The system is preparing to sleep. Resume before operating the GPU.'))
+
+    def _attach_awake(self, profile, rescan=True):
         if not profile.get("target"):
             raise RuntimeError(tr('Select the target GPU on the Deployment page first.'))
         if rescan:
@@ -292,6 +309,7 @@ class Controller:
             # Do not initialize NVIDIA while USB4 BARs are still being assigned.
             deadline, previous, since = time.monotonic() + 100, None, 0
             while time.monotonic() < deadline:
+                self._ensure_awake()
                 gpu = target_gpu(gpu_inventory(), profile)
                 signature = None
                 if gpu:
@@ -316,11 +334,14 @@ class Controller:
         if profile.get("keep_path_awake", True):
             self._keep_awake(gpu)
         for module in ("nvidia", "nvidia_modeset", "nvidia_drm", "nvidia_uvm"):
+            self._ensure_awake()
             command(["modprobe", "--ignore-install", module], timeout=45)
         device = Path("/sys/bus/pci/devices") / gpu["pci"]
         if not (device / "driver").exists():
+            self._ensure_awake()
             device_action("bind", gpu, timeout=15)
         for _ in range(20):
+            self._ensure_awake()
             if (device / "driver").resolve().name == "nvidia" and Path("/dev/nvidiactl").exists():
                 return
             time.sleep(1)
@@ -362,15 +383,21 @@ class Controller:
             self.ignored_gpu = None
             command(["udevadm", "control", "--reload-rules"], timeout=3)
 
-    def _detach(self, gpu, allow_displays=False):
+    def _detach(self, gpu, allow_displays=False, allowed_displays=None):
         with self.device_lock:
-            return self._detach_locked(gpu, allow_displays)
+            return self._detach_locked(gpu, allow_displays, allowed_displays)
 
-    def _detach_locked(self, gpu, allow_displays=False):
+    def _detach_locked(self, gpu, allow_displays=False, allowed_displays=None):
         # Recheck immediately before any device mutation. No force-unload or kills.
         _, current = self._profile_and_gpu()
         if not current or current["pci"] != gpu["pci"]:
             raise RuntimeError(tr('The GPU changed; removal cancelled.'))
+        # 最后一次读取位于设备锁内；队列等待时的检查不能替代提交前检查。
+        if allowed_displays is not None:
+            connected_names = {c["name"] for c in current["connectors"]
+                               if c["kind"] == "external" and c["status"] == "connected"}
+            if current["external_display_state"] == "unknown" or connected_names - allowed_displays:
+                raise RuntimeError(tr('Monitor connections changed; queued removal cancelled.'))
         connected = current["external_display_state"] == "connected"
         panel_ready = other_internal_display_ready(gpu_inventory(), current) if connected or allow_displays else False
         check = detach_check(current, holders(current), allow_connected=allow_displays, other_display_ready=panel_ready)
@@ -392,7 +419,8 @@ class Controller:
         self.event(tr('Target GPU and audio function removed from PCI. You may unplug the GPU cable.'))
         return tr('Safely removed. You may unplug the GPU cable. Reconnect USB4 or click Reconnect to use it again.')
 
-    def perform(self, action, options):
+    def reserve_operation(self, action, options):
+        """确认异步请求前原子占用操作槽，避免两个客户端同时收到成功回执。"""
         allowed = {"attach": set(), "detach": {"expected_pci"},
                    "queue-detach": {"expected_pci"}, "deploy": {"profile"}, "rollback": set(), "set-automation": {"enabled"},
                    **dict.fromkeys(INTERNAL_ACTIONS, {"expected_pci"})}
@@ -400,10 +428,31 @@ class Controller:
             raise ValueError(tr('Unsupported operation or options.'))
         if not self.operation_lock.acquire(blocking=False):
             raise RuntimeError(tr('Another operation is in progress. Wait or cancel the queued request.'))
+        token = object()
         self.cancel_event.clear()
         with self.lock:
+            self.operation_reservation = (token, action, dict(options))
             self.operation = {"state": "running", "action": action, "message": tr('Working…')}
+        return token
+
+    def fail_reserved(self, token, error):
+        with self.lock:
+            if not self.operation_reservation or self.operation_reservation[0] is not token:
+                return
+            action = self.operation_reservation[1]
+            self.operation = {"state": "error", "action": action, "message": str(error)}
+            self.operation_reservation = None
+            self.operation_lock.release()
+        self.event(tr('Operation failed: ') + str(error))
+
+    def perform(self, action, options, reservation=None):
+        token = reservation if reservation is not None else self.reserve_operation(action, options)
+        with self.lock:
+            if self.operation_reservation != (token, action, options):
+                raise RuntimeError(tr('Unsupported operation or options.'))
         try:
+            if action in {"attach", "detach", "queue-detach", *INTERNAL_ACTIONS} and deployment.status(self.active_profile())["restart_required"]:
+                raise RuntimeError(tr('Configuration deployed; restart before reconnecting.'))
             if self.sleeping and action in {"attach", "detach", "queue-detach", *INTERNAL_ACTIONS}:
                 raise RuntimeError(tr('The system is preparing to sleep. Resume before operating the GPU.'))
             profile, gpu = (None, None) if action in {"deploy", "rollback", "set-automation", *INTERNAL_ACTIONS} else self._profile_and_gpu()
@@ -468,7 +517,7 @@ class Controller:
                         if current["external_display_state"] == "unknown" or now_displays - initial_displays:
                             raise RuntimeError(tr('Monitor connections changed; queued removal cancelled.'))
                         if check["safe"]:
-                            message = self._detach(current, allow_displays=True)
+                            message = self._detach(current, allow_displays=True, allowed_displays=initial_displays)
                             break
                     else:
                         raise RuntimeError(tr('Timed out waiting for GPU release. The request was cancelled and display access restored.'))
@@ -489,7 +538,10 @@ class Controller:
                     except Exception as cleanup_error:
                         self.event(tr('Temporary display rule cleanup was incomplete: ') + str(cleanup_error))
             finally:
-                self.operation_lock.release()
+                with self.lock:
+                    if self.operation_reservation and self.operation_reservation[0] is token:
+                        self.operation_reservation = None
+                        self.operation_lock.release()
 
     def cancel(self):
         if self.operation.get("action") != "queue-detach" or self.operation.get("state") not in {"waiting", "running"}:

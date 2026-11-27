@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-"""Start a private software-rendered GNOME in a device-free bubblewrap sandbox."""
+"""在不暴露设备的 bubblewrap 沙箱中启动软件渲染 GNOME，验证启动与接口。"""
 import argparse
 import json
 import os

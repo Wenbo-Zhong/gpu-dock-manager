@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# 先确认恢复完成且已重启，再移除应用；保留备份供后续人工检查。
 set -euo pipefail
 [[ $EUID -eq 0 ]] || { echo 'Use sudo bash uninstall.sh'; exit 1; }
 if { command -v dpkg-query >/dev/null && dpkg-query -S /usr/bin/usb4-gpu-manager >/dev/null 2>&1; } ||
@@ -17,6 +18,24 @@ if json.loads(result.unpack()[0]).get('operation', {}).get('state') in {'running
  raise SystemExit('Finish or cancel the active manager operation before uninstalling.')
 PY
 fi
+# 不依赖 profile 存在性：首次回滚已经删掉它时仍可能欠一次恢复或重启。
+/usr/bin/python3 -I - <<'PY'
+import json
+from pathlib import Path
+state = Path('/var/lib/usb4-gpu-manager')
+if (state / 'deployment-pending.json').exists():
+ raise SystemExit('Deployment recovery is pending. Run recover before uninstalling.')
+marker = state / 'restart-required.json'
+if marker.exists():
+ try:
+  saved = json.loads(marker.read_text())
+  boot = Path('/proc/sys/kernel/random/boot_id').read_text().strip()
+  required = not isinstance(saved, dict) or not saved.get('boot') or saved['boot'] == boot
+ except (OSError, ValueError):
+  required = True
+ if required:
+  raise SystemExit('Restart and verify the restored configuration before uninstalling.')
+PY
 if [[ -e /etc/usb4-gpu-manager/profile.json ]]; then
     echo 'Restore device policy first from the GUI, or run sudo usb4-gpu-managerctl recover.' >&2
     echo 'Reboot and verify the restored configuration before uninstalling.' >&2

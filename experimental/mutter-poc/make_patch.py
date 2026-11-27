@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-"""Generate the opt-in research patch from the audited Ubuntu 50.1 source.
+"""从已检视的 Ubuntu 50.1 源码生成实验补丁；生成器与分发补丁须同步维护。
 
 Generated patch and overlays: GPL-2.0-or-later (Mutter-compatible).
 Does not modify the supplied source tree or the installed compositor.

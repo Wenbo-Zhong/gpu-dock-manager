@@ -1,4 +1,4 @@
-"""Small system helpers. Commands use argument arrays and a fixed PATH."""
+"""系统边界：参数数组执行命令、限制等待时间，并原子写入状态文件。"""
 
 from .i18n import tr
 import json
@@ -8,9 +8,28 @@ import subprocess
 import signal
 import tempfile
 import threading
+from contextlib import contextmanager
 
 _stalled = {}
 _stalled_lock = threading.Lock()
+
+
+@contextmanager
+def sleep_inhibitor():
+    """持有 logind 文件描述符期间禁止睡眠，退出或失败都释放锁。"""
+    from gi.repository import Gio, GLib
+    bus = Gio.bus_get_sync(Gio.BusType.SYSTEM, None)
+    reply, descriptors = bus.call_with_unix_fd_list_sync(
+        "org.freedesktop.login1", "/org/freedesktop/login1",
+        "org.freedesktop.login1.Manager", "Inhibit",
+        GLib.Variant("(ssss)", ("sleep:shutdown", "USB4 GPU Manager",
+                                "Changing GPU drivers", "block")),
+        GLib.VariantType.new("(h)"), Gio.DBusCallFlags.NONE, 5000, None, None)
+    descriptor = descriptors.get(reply.unpack()[0])
+    try:
+        yield
+    finally:
+        os.close(descriptor)
 
 
 def gpu_holder_hint(process):
@@ -37,7 +56,9 @@ def command(args, timeout=15, check=True, guard_key=None):
         old = _stalled.get(key)
         if old is not None:
             if old.poll() is None:
-                raise subprocess.TimeoutExpired(args, timeout, stderr=tr('The previous driver call has not exited; duplicate requests are paused.'))
+                error = subprocess.TimeoutExpired(args, timeout, stderr=tr('The previous driver call has not exited; duplicate requests are paused.'))
+                error.process_still_running = True
+                raise error
             del _stalled[key]
     process = subprocess.Popen(args, text=True, stdout=subprocess.PIPE,
                                stderr=subprocess.PIPE, start_new_session=True,
@@ -46,6 +67,7 @@ def command(args, timeout=15, check=True, guard_key=None):
     try:
         stdout, stderr = process.communicate(timeout=timeout)
     except subprocess.TimeoutExpired as error:
+        error.process_still_running = False
         try:
             os.killpg(process.pid, signal.SIGKILL)
         except ProcessLookupError:
@@ -53,6 +75,7 @@ def command(args, timeout=15, check=True, guard_key=None):
         try:
             process.communicate(timeout=0.2)
         except subprocess.TimeoutExpired:
+            error.process_still_running = True
             with _stalled_lock:
                 _stalled[key] = process
             for pipe in (process.stdout, process.stderr):
@@ -84,6 +107,12 @@ def atomic_write(path, content, mode=0o644):
             os.fsync(stream.fileno())
         os.chmod(temporary, mode)
         os.replace(temporary, path)
+        # 文件内容与目录项分别同步，断电后恢复日志和目标文件必须仍然可达。
+        directory_fd = os.open(path.parent, os.O_RDONLY | os.O_DIRECTORY)
+        try:
+            os.fsync(directory_fd)
+        finally:
+            os.close(directory_fd)
     finally:
         Path(temporary).unlink(missing_ok=True)
 

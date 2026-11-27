@@ -19,8 +19,8 @@ gpu_release_poc_clean_child_environment (void)
       g_strcmp0 (g_getenv ("MUTTER_GPU_RELEASE_POC_CLEAN_CHILD_ENV"), "1") != 0)
     return;
   data_dirs = g_getenv ("MUTTER_GPU_RELEASE_POC_ORIGINAL_DATA_DIRS");
-  /* The dynamic loader has already captured its startup search paths. Keep
-   * those paths out of environments passed to applications launched by Shell. */
+  /* 动态加载器已保存启动时的搜索路径；这里只清理 Shell 后续启动应用的环境，
+   * 不影响当前 Shell 已加载的私有库，避免实验路径污染普通桌面应用。 */
   if (data_dirs)
     g_setenv ("XDG_DATA_DIRS", data_dirs, TRUE);
   g_unsetenv ("LD_LIBRARY_PATH");

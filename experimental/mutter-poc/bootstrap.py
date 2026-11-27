@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-"""Ubuntu 26.04 amd64: stage source/build dependencies without root or apt install."""
+"""Ubuntu 26.04 amd64 的用户态构建准备；下载依赖到私有目录，不安装系统包。"""
 import argparse
 import hashlib
 import json

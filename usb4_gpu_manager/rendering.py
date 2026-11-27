@@ -1,4 +1,4 @@
-"""Force the built-in panel's AMD/Intel Mesa GPU for the manager UI."""
+"""为管理界面选择驱动内屏的 AMD/Intel Mesa GPU，避免界面占用待移除设备。"""
 from pathlib import Path
 import os
 

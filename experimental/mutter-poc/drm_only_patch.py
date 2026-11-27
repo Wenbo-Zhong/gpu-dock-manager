@@ -1,4 +1,4 @@
-"""GPL-2.0-or-later: explicitly enabled, device-scoped DRM-only/CPU-copy PoC."""
+"""GPL-2.0-or-later：为指定设备生成 DRM-only/CPU-copy 补丁，必须显式启用。"""
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -123,10 +123,12 @@ init_secondary_gpu_state (''')
     }
 
   gbm_device =''')
+    # 每视图决定软光标：内置 4070 单独使用 DRM-only 时也可能与 AMD 硬光标混用。
     text = once(text, '  gboolean cursor_changed, cursor_hw_managed = FALSE;',
         '''  gboolean cursor_changed, cursor_hw_managed = FALSE;
   gboolean per_view_overlay = gpu_release_poc_enabled () &&
-    g_getenv ("MUTTER_GPU_RELEASE_POC_DRM_ONLY_PCI") != NULL;
+    (g_getenv ("MUTTER_GPU_RELEASE_POC_DRM_ONLY_PCI") != NULL ||
+     g_getenv ("MUTTER_GPU_RELEASE_POC_DRM_ONLY_INTERNAL_PCI") != NULL);
   gboolean any_software_view = FALSE;''')
     text = once(text, '          cursor_stage_view->has_hw_cursor = has_hw_cursor;',
         '''          cursor_stage_view->has_hw_cursor = has_hw_cursor;

@@ -1,4 +1,4 @@
-"""GNOME session display control. No root, PCI writes or implicit GPU removal.
+"""GNOME 会话显示控制：只应用临时显示配置，设备移除仍由管理服务显式执行。
 
 API reference: GNOME/mutter 50.1 data/dbus-interfaces/
 org.gnome.Mutter.DisplayConfig.xml. Only temporary configurations are applied.

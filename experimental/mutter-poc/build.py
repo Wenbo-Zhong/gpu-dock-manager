@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-"""Build/install into a private user prefix. Never installs system packages."""
+"""把实验版 Mutter 构建并安装到用户私有前缀；生成清单供启动前校验。"""
 import argparse
 import hashlib
 import json

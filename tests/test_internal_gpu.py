@@ -1,6 +1,7 @@
 from pathlib import Path
 import tempfile
 import unittest
+import subprocess
 from unittest.mock import patch
 
 from usb4_gpu_manager import controller, hardware, internal_gpu
@@ -109,6 +110,34 @@ class InternalGpuTests(unittest.TestCase):
         self.assertEqual(self.drivers(), ("vfio-pci", "vfio-pci"))
         for device in (self.gpu, self.audio):
             self.assertEqual((device / "driver_override").read_text().strip(), "")
+
+    def test_nvidia_timeout_restores_pair_only_after_child_has_exited(self):
+        for running in (False, True):
+            with self.subTest(process_still_running=running):
+                self.bind(self.gpu, "vfio-pci", self.bus)
+                self.bind(self.audio, "vfio-pci", self.bus)
+                for device in (self.gpu, self.audio):
+                    (device / "driver_override").write_text("\n")
+                error = subprocess.TimeoutExpired(["modprobe", "nvidia"], 10)
+                error.process_still_running = running
+
+                def load(args, **kwargs):
+                    if args[-1] == "nvidia":
+                        self.bind(self.gpu, None, self.bus)
+                        raise error
+
+                with (patch.object(internal_gpu, "check_idle"),
+                      patch.object(internal_gpu, "command", side_effect=load),
+                      patch.object(internal_gpu, "bind_driver", side_effect=self.bind) as bind,
+                      self.assertRaises(RuntimeError)):
+                    internal_gpu.switch_internal_gpu(PCI, "internal-attach", self.sysfs)
+                if running:
+                    bind.assert_not_called()
+                    self.assertEqual((self.gpu / "driver_override").read_text().strip(), "nvidia")
+                else:
+                    self.assertEqual(self.drivers(), ("vfio-pci", "vfio-pci"))
+                    for device in (self.gpu, self.audio):
+                        self.assertEqual((device / "driver_override").read_text().strip(), "")
 
     def test_binding_failure_restores_original_pair(self):
         self.bind(self.gpu, "vfio-pci", self.bus)

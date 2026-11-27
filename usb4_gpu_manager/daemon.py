@@ -1,4 +1,4 @@
-"""System-bus API. Reads are unprivileged; every mutation checks Polkit."""
+"""系统总线服务：查询只读，修改先经 Polkit 授权再预约后台操作。"""
 
 from .i18n import tr
 import json
@@ -111,9 +111,12 @@ class Service:
                 value = self.controller.perform(action, options)
             else:
                 # Return immediately after authorization; progress is exposed in GetStatus.
-                if self.controller.operation_lock.locked():
-                    raise RuntimeError(tr('Another operation is in progress.'))
-                self.pool.submit(self._job, action, options)
+                token = self.controller.reserve_operation(action, options)
+                try:
+                    self.pool.submit(self._job, action, options, token)
+                except Exception as error:
+                    self.controller.fail_reserved(token, error)
+                    raise
                 value = tr('Operation submitted.')
             GLib.idle_add(self.reply, invocation, value)
         except Exception as error:
@@ -127,7 +130,7 @@ class Service:
         except Exception as error:
             GLib.idle_add(self.reply, invocation, None, error)
 
-    def _job(self, action, options):
+    def _job(self, action, options, reservation):
         inhibitor = None
         try:
             if action in {"deploy", "rollback"}:
@@ -138,11 +141,10 @@ class Service:
                                             "Changing GPU configuration", "block")),
                     GLib.VariantType.new("(h)"), Gio.DBusCallFlags.NONE, 5000, None, None)
                 inhibitor = descriptors.get(reply.unpack()[0])
-            self.controller.perform(action, options)
+            self.controller.perform(action, options, reservation=reservation)
         except Exception as error:
-            if not self.controller.operation_lock.locked():
-                with self.controller.lock:
-                    self.controller.operation = {"state": "error", "action": action, "message": str(error)}
+            # 包括获取 inhibitor 失败：只有拥有预约的任务可以修改状态、释放槽位。
+            self.controller.fail_reserved(reservation, error)
             logging.getLogger("usb4-gpu-manager").exception("Manager operation failed")
         finally:
             if inhibitor is not None:

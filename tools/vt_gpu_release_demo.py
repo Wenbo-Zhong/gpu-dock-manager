@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-"""Diagnostic only: preserve the Wayland session and measure GPU FDs on a spare VT.
+"""保留 Wayland 会话，在备用 VT 上测量 GPU 描述符；只用于诊断释放条件。
 
 No PCI remove/unbind, module unload, process termination or GDM restart.
 Run with the system Python in isolated mode; --check-only never switches VT.

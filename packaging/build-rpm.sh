@@ -1,4 +1,5 @@
 #!/bin/sh
+# RPM 打包入口；构建目录自动清理，版本和发行版依赖由 spec 描述。
 set -eu
 cd "$(dirname "$0")/.."
 version=${1:?version required}

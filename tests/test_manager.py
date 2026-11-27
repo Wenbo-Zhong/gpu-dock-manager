@@ -317,7 +317,7 @@ class LifecycleTests(unittest.TestCase):
             manager = controller.Controller()
             manager.refresh = lambda: {"target": device, "profile": PROFILE,
                                        "deployment": {"restart_required": False}, "usb4": []}
-            with patch.object(controller.time, "monotonic", return_value=0) as clock, patch.object(manager, "_keep_awake"), patch.object(manager, "_attach") as attach:
+            with patch.object(controller, "observe", side_effect=lambda data: data), patch.object(controller.time, "monotonic", return_value=0) as clock, patch.object(manager, "_keep_awake"), patch.object(manager, "_attach") as attach:
                 manager.tick()
                 clock.return_value = 8
                 manager.tick()

@@ -133,17 +133,18 @@
  
  #include "backends/native/meta-cursor-renderer-native.h"
  
-@@ -372,6 +373,9 @@
+@@ -372,6 +373,10 @@
    MetaKms *kms = meta_backend_native_get_kms (backend_native);
    MetaKmsCursorManager *kms_cursor_manager = meta_kms_get_cursor_manager (kms);
    gboolean cursor_changed, cursor_hw_managed = FALSE;
 +  gboolean per_view_overlay = gpu_release_poc_enabled () &&
-+    g_getenv ("MUTTER_GPU_RELEASE_POC_DRM_ONLY_PCI") != NULL;
++    (g_getenv ("MUTTER_GPU_RELEASE_POC_DRM_ONLY_PCI") != NULL ||
++     g_getenv ("MUTTER_GPU_RELEASE_POC_DRM_ONLY_INTERNAL_PCI") != NULL);
 +  gboolean any_software_view = FALSE;
    GList *views;
    GList *l;
  
-@@ -451,6 +455,21 @@
+@@ -451,6 +456,21 @@
          {
            cursor_stage_view->has_hw_cursor = has_hw_cursor;
  
@@ -165,7 +166,7 @@
            if (!has_hw_cursor)
              {
                MetaCrtcKms *crtc_kms = META_CRTC_KMS (crtc);
-@@ -465,6 +484,7 @@
+@@ -465,6 +485,7 @@
          }
  
        cursor_hw_managed |= cursor_stage_view->has_hw_cursor;
@@ -173,7 +174,7 @@
      }
  
    if (cursor_changed)
-@@ -489,7 +509,7 @@
+@@ -489,7 +510,7 @@
    maybe_schedule_cursor_sprite_animation_frame (native, cursor,
                                                  cursor_changed);
  
@@ -182,7 +183,7 @@
            cursor &&
            clutter_cursor_get_texture (cursor, NULL, NULL));
  }
-@@ -1401,6 +1421,12 @@
+@@ -1401,6 +1422,12 @@
  
    cursor_renderer_gpu_data =
      meta_create_cursor_renderer_native_gpu_data (gpu_kms);
@@ -195,7 +196,7 @@
  
    gbm_device = meta_gbm_device_from_gpu (gpu_kms);
    format_info = find_cursor_format_info (gpu_kms, gbm_device);
-@@ -1438,6 +1464,9 @@
+@@ -1438,6 +1465,9 @@
  
    cursor_renderer_gpu_data->cursor_width = width;
    cursor_renderer_gpu_data->cursor_height = height;
@@ -342,9 +343,10 @@
  
 --- /dev/null
 +++ b/src/backends/native/meta-gpu-drm-only-poc.h
-@@ -0,0 +1,78 @@
+@@ -0,0 +1,79 @@
 +/* SPDX-License-Identifier: GPL-2.0-or-later */
 +#pragma once
++/* 设备身份与显式开关同时匹配才启用策略；内置 4070 不使用可移除属性判定。 */
 +#include <glib-object.h>
 +#include "meta-gpu-release-poc.h"
 +
@@ -445,8 +447,8 @@
 +      g_strcmp0 (g_getenv ("MUTTER_GPU_RELEASE_POC_CLEAN_CHILD_ENV"), "1") != 0)
 +    return;
 +  data_dirs = g_getenv ("MUTTER_GPU_RELEASE_POC_ORIGINAL_DATA_DIRS");
-+  /* The dynamic loader has already captured its startup search paths. Keep
-+   * those paths out of environments passed to applications launched by Shell. */
++  /* 动态加载器已保存启动时的搜索路径；这里只清理 Shell 后续启动应用的环境，
++   * 不影响当前 Shell 已加载的私有库，避免实验路径污染普通桌面应用。 */
 +  if (data_dirs)
 +    g_setenv ("XDG_DATA_DIRS", data_dirs, TRUE);
 +  g_unsetenv ("LD_LIBRARY_PATH");

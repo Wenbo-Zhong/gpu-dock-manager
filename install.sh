@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# 应用安装与设备策略部署分开；升级期间服务不可被 D-Bus 自动拉起。
 # Installs immutable application code and a read-only-by-default system daemon.
 # Device policy migration is a separate, previewable action in the GUI.
 set -euo pipefail
@@ -24,6 +25,12 @@ try:
 except (ImportError, ValueError):
  raise SystemExit('Missing desktop dependencies. Rerun: sudo bash install.sh --install-deps')
 PY
+# 安装期间拒绝 StartUnit（包括 D-Bus 激活），避免复制一半时加载混合版本。
+# 使用运行时 drop-in，因为 /etc 下已有 unit 时 runtime mask 的优先级不足。
+upgrade_guard=/run/systemd/system/usb4-gpu-manager.service.d/99-install-guard.conf
+install -d -m 0755 "$(dirname "$upgrade_guard")"
+printf '[Unit]\nRefuseManualStart=yes\n' > "$upgrade_guard"
+systemctl daemon-reload
 if systemctl is-active --quiet usb4-gpu-manager.service; then
     /usr/bin/python3 -I - <<'PY'
 import json, time
@@ -37,6 +44,9 @@ if status.get('operation', {}).get('state') in {'running', 'waiting', 'removing'
   raise SystemExit('The previous service is stalled. Save work, keep the eGPU disconnected, reboot, then rerun this installer.')
  raise SystemExit('A manager operation is active. Finish or cancel it before upgrading.')
 PY
+fi
+# 同样停止 activating/restarting 的服务及其排队启动任务，再覆盖代码。
+if systemctl cat usb4-gpu-manager.service >/dev/null 2>&1; then
     systemctl stop usb4-gpu-manager.service
 fi
 install -d -m 0755 /usr/lib/usb4-gpu-manager/usb4_gpu_manager /usr/share/dbus-1/system-services /etc/dbus-1/system.d /usr/share/polkit-1/actions /usr/share/applications
@@ -75,6 +85,9 @@ install -m 0644 "$source_dir"/experimental/mutter-poc/overlay/* "$share/mutter-p
 install -m 0644 "$source_dir"/experimental/mutter-poc/tests/*.[ch] "$share/mutter-poc/tests/"
 systemctl daemon-reload
 systemctl reload dbus.service
+# 失败时保留保护；所有文件安装完成才允许服务再次启动。
+rm -f "$upgrade_guard"
+systemctl daemon-reload
 systemctl enable --now usb4-gpu-manager.service
 echo 'Application installed. Existing GPU policy has not been changed.'
 echo 'Open USB4 GPU Manager, then use 部署与恢复 → 预览部署变更 to migrate your configuration.'

@@ -155,6 +155,23 @@ class PocControlTests(unittest.TestCase):
             self.assertNotIn("trial_consumed", json.loads(state.read_text()))
             run.assert_not_called()
 
+    def test_launcher_rejected_manifest_clears_inherited_private_environment(self):
+        inherited = {"PATH": "/usr/bin", "LD_LIBRARY_PATH": "/private/poc",
+                     "LD_PRELOAD": "/private/poc.so", "GI_TYPELIB_PATH": "/private/gi",
+                     "XDG_DATA_DIRS": "/private/share:/usr/share",
+                     "MUTTER_GPU_RELEASE_POC_DRM_ONLY_INTERNAL_PCI": "0000:65:00.0"}
+        with (patch.object(launcher, "state_path", return_value=Mock(read_text=Mock(return_value="{}"))),
+              patch.object(launcher.sys, "argv", ["launch_shell.py", "--mode=ubuntu"]),
+              patch.object(launcher, "prepare_environment", side_effect=RuntimeError("invalid manifest")),
+              patch.object(launcher, "consume_trial"), patch.object(launcher.os, "environ", inherited),
+              patch.object(launcher.os, "execve") as execute, patch("builtins.print")):
+            launcher.main()
+        environment = execute.call_args.args[2]
+        for key in ("LD_LIBRARY_PATH", "LD_PRELOAD", "GI_TYPELIB_PATH",
+                    "MUTTER_GPU_RELEASE_POC_DRM_ONLY_INTERNAL_PCI"):
+            self.assertNotIn(key, environment)
+        self.assertEqual(environment["XDG_DATA_DIRS"], "/usr/local/share:/usr/share")
+
     def test_launcher_disarm_failure_uses_system_environment(self):
         with patch.object(launcher, "state_path", return_value=Mock(read_text=Mock(return_value="{}"))), patch.object(launcher.sys, "argv", ["launch_shell.py", "--mode=ubuntu"]), patch.object(launcher, "prepare_environment", return_value={"LD_LIBRARY_PATH": "/private/poc"}), patch.object(launcher, "consume_trial", side_effect=RuntimeError("reload failed")), patch.object(launcher.os, "environ", {"PATH": "/usr/bin", "MUTTER_GPU_RELEASE_POC": "1"}), patch.object(launcher.os, "execve") as execute, patch("builtins.print"):
             launcher.main()

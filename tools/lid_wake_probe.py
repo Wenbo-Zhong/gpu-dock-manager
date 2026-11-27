@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-"""GPL-3.0-only. Capture one user-initiated lid suspend; restore debug settings."""
+"""GPL-3.0-only。记录一次用户触发的合盖睡眠；结束时恢复临时调试设置。"""
 import json
 import argparse
 import os

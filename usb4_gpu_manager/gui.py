@@ -1,4 +1,4 @@
-"""GTK4/libadwaita UI. The UI never writes sysfs or invokes privileged shells."""
+"""GTK4/libadwaita 界面：展示服务状态，用户会话管理显示，特权操作交给服务。"""
 
 from .i18n import tr, select_language
 from concurrent.futures import ThreadPoolExecutor
@@ -194,6 +194,7 @@ class Window(Adw.ApplicationWindow):
         self.display_message = ""
         self.display_action = ""
         self.operation_pending = False
+        self.pending_requests = {}
         self.connect("close-request", self.close_to_tray)
         self.connect("realize", self.watch_minimize)
         self.capture_path = capture
@@ -484,7 +485,7 @@ class Window(Adw.ApplicationWindow):
         gpu, connected = data.get("target"), data.get("service_connected", False)
         deploy = data.get("deployment", {})
         operation = data.get("operation", {})
-        busy = self.display_busy or operation.get("state") in {"running", "waiting", "removing"}
+        busy = self.operation_pending or self.display_busy or operation.get("state") in {"running", "waiting", "removing"}
         fresh = data.get("can_mutate_devices", False)
         transport = data.get("transport", {})
         removal_done = operation.get("state") == "done" and operation.get("action") in {"detach", "queue-detach"}
@@ -776,20 +777,32 @@ class Window(Adw.ApplicationWindow):
         return True
 
     def submit(self, action, options=None):
+        # 授权弹窗和本地显示操作也属于未完成请求；仅允许额外提交队列取消。
+        busy = self.operation_pending or self.data.get("operation", {}).get("state") in {"running", "waiting", "removing"}
+        if busy and (action != "cancel-detach" or action in self.pending_requests.values()):
+            self.toast(tr('Another operation is in progress. Wait or cancel the queued request.'))
+            return
+        request = object()
+        self.pending_requests[request] = action
         self.operation_pending = True
         display_action = action in {"disable-displays", "restore-displays", *INTERNAL_DISPLAY_ACTIONS}
-        self.display_busy = display_action
-        self.display_action = action if display_action else ""
-        self.display_message = tr("Changing this desktop's external outputs…") if display_action else ""
+        if display_action:
+            self.display_busy = True
+            self.display_action = action
+            self.display_message = tr("Changing this desktop's external outputs…")
+        elif not self.display_busy:
+            self.display_action, self.display_message = "", ""
         if self.data:
             self.apply_status(self.data, completed=False)
         self.show_operation(action, self.display_message or tr('Submitting to the management service…'))
         def finished(message, failed=False):
-            self.operation_pending = False
-            self.display_busy = False
+            self.pending_requests.pop(request, None)
+            self.operation_pending = bool(self.pending_requests)
+            self.display_busy = any(a in {"disable-displays", "restore-displays", *INTERNAL_DISPLAY_ACTIONS}
+                                    for a in self.pending_requests.values())
             if display_action:
                 self.display_message = (tr('Display operation failed: ') if failed else "") + str(message)
-            if failed:
+            if failed and action != "cancel-detach":
                 self.pending_logout = False
             self.toast(operation_summary(message))
             self.refresh()
@@ -800,14 +813,19 @@ class Window(Adw.ApplicationWindow):
                 GLib.idle_add(finished, message)
             except Exception as error:
                 GLib.idle_add(finished, str(error), True)
-        self.pool.submit(work)
+        try:
+            self.pool.submit(work)
+        except Exception as error:
+            finished(str(error), True)
 
     def close_to_tray(self, *_):
         app = self.get_application()
         if app.tray and app.tray.ready:
             self.set_visible(False)
             return True
-        return False
+        # 无托盘时也经过统一退出保护，避免关闭窗口绕过队列和授权等待检查。
+        app.request_quit()
+        return True
 
     def watch_minimize(self, *_):
         surface = self.get_surface()

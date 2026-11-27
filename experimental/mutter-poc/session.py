@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-"""Configure the experimental Mutter for GNOME logins without restarting the session."""
+"""配置下次 GNOME 登录使用的实验启动器；持久化试用状态，不重启当前会话。"""
 import argparse
 import hashlib
 import json

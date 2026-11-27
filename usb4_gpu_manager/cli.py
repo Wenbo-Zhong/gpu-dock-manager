@@ -1,5 +1,7 @@
 
 from .i18n import tr
+"""命令行入口：复用客户端协议，恢复命令与界面回滚走同一服务路径。"""
+
 import argparse
 import json
 import os

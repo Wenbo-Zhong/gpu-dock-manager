@@ -1,4 +1,4 @@
-"""Strict identity checks for the explicitly enrolled internal RTX 4070."""
+"""校验显式选定的内置 RTX 4070 身份；内部策略与可移除外接设备策略分开。"""
 from pathlib import Path
 import re
 

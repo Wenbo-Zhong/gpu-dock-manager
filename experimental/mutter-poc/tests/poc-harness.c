@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later
- * Compile the actual PoC interface against inert GPU stubs and real GIO D-Bus.
+ * 使用惰性 GPU 桩和真实 GIO D-Bus 编译 PoC 接口；不接触宿主显卡。
  * This tests the guards, idle transaction, weak lifetime and shutdown paths;
  * it cannot validate EGL, NVIDIA or real Mutter's reference graph.
  */

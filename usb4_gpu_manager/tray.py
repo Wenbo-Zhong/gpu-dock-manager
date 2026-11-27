@@ -1,4 +1,4 @@
-"""GTK4-compatible StatusNotifierItem and DBusMenu, without GTK3 bindings."""
+"""GTK4 托盘协议适配：注册 StatusNotifierItem，并以 owner 代次过滤过期回调。"""
 
 from .i18n import tr
 from gi.repository import Gio, GLib
@@ -35,6 +35,9 @@ class Tray:
     def __init__(self, show, hide, quit):
         self.show, self.hide, self.quit = show, hide, quit
         self.ready = False
+        self.generation = 0
+        self.owner = None
+        self.closed = False
         self.bus = Gio.bus_get_sync(Gio.BusType.SESSION, None)
         self.registrations = []
         for path, xml, handler, getter in (
@@ -46,17 +49,27 @@ class Tray:
             Gio.BusNameWatcherFlags.NONE, self.appeared, self.vanished)
 
     def appeared(self, connection, name, owner):
+        if self.closed:
+            return
+        self.generation += 1
+        generation = self.generation
+        self.owner, self.ready = owner, False
         def registered(bus, result):
             try:
                 bus.call_finish(result)
-                self.ready = True
+                ready = True
             except GLib.Error:
-                self.ready = False
-        connection.call(name, '/StatusNotifierWatcher', 'org.kde.StatusNotifierWatcher',
+                ready = False
+            # 旧 owner 的迟到回调不能让已经消失或关闭的托盘重新变成可用。
+            if not self.closed and generation == self.generation and owner == self.owner:
+                self.ready = ready
+        connection.call(owner, '/StatusNotifierWatcher', 'org.kde.StatusNotifierWatcher',
                         'RegisterStatusNotifierItem', GLib.Variant('(s)', ('/StatusNotifierItem',)),
                         None, Gio.DBusCallFlags.NONE, 5000, None, registered)
 
     def vanished(self, *_):
+        self.generation += 1
+        self.owner = None
         was_ready, self.ready = self.ready, False
         if was_ready:
             self.show()
@@ -126,6 +139,9 @@ class Tray:
         invocation.return_value(value)
 
     def close(self):
+        self.closed = True
+        self.generation += 1
+        self.owner, self.ready = None, False
         Gio.bus_unwatch_name(self.watch)
         for registration in self.registrations:
             self.bus.unregister_object(registration)

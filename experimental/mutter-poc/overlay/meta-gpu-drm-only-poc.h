@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 #pragma once
+/* 设备身份与显式开关同时匹配才启用策略；内置 4070 不使用可移除属性判定。 */
 #include <glib-object.h>
 #include "meta-gpu-release-poc.h"
 

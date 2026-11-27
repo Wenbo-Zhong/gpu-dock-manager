@@ -1,4 +1,5 @@
 #!/bin/sh
+# Debian 打包入口；复用统一安装树，依赖和生命周期操作写入包元数据。
 set -eu
 cd "$(dirname "$0")/.."
 version=${1:?version required}

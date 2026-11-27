@@ -93,8 +93,9 @@ class InhibitorTests(unittest.TestCase):
         service.controller.operation_lock = threading.Lock()
         service.controller.lock = threading.RLock()
         try:
-            service._job("deploy", {"profile": {}})
-            service.controller.perform.assert_called_once_with("deploy", {"profile": {}})
+            token = object()
+            service._job("deploy", {"profile": {}}, token)
+            service.controller.perform.assert_called_once_with("deploy", {"profile": {}}, reservation=token)
             arguments = service.connection.call_with_unix_fd_list_sync.call_args.args
             self.assertEqual(arguments[4].unpack()[0], "sleep:shutdown")
             with self.assertRaises(OSError):
@@ -111,6 +112,8 @@ class InhibitorTests(unittest.TestCase):
         service.controller.operation_lock = threading.Lock()
         service.controller.lock = threading.RLock()
         with patch("logging.getLogger"):
-            service._job("deploy", {})
+            token = object()
+            service._job("deploy", {}, token)
         service.controller.perform.assert_not_called()
-        self.assertEqual(service.controller.operation["state"], "error")
+        service.controller.fail_reserved.assert_called_once()
+        self.assertIs(service.controller.fail_reserved.call_args.args[0], token)

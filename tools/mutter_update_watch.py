@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-"""Notify about repository versions newer than the official Mutter build base."""
+"""比较仓库候选版本与实验补丁基线，提醒更新后重新核验 Mutter 兼容性。"""
 import argparse
 import json
 import os

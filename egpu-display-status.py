@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-"""Report physical display connections by owning PCI GPU; never change devices."""
+"""按所属 PCI GPU 报告物理显示连接；兼容旧服务的只读诊断入口。"""
 import argparse
 import json
 from pathlib import Path

@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-"""GNOME unit launcher. On a stale/missing build, fall back to system libraries."""
+"""GNOME 单元启动器：先校验私有构建，失败时清理环境并加载系统库。"""
 import argparse
 import json
 import os
@@ -13,13 +13,18 @@ from session import consume_trial, save_state, state_path, verify_manifest
 from preflight import check as check_gi
 
 
-def prepare_environment(state):
+def system_environment():
+    """剥离私有库和实验开关，校验失败时保证从系统 Mutter 启动。"""
     environment = dict(os.environ)
-    environment.pop("MUTTER_GPU_RELEASE_POC", None)
-    environment.pop("MUTTER_GPU_RELEASE_POC_TRACE_DEVICE", None)
-    environment.pop("MUTTER_GPU_RELEASE_POC_TRACE_FDS", None)
-    environment.pop("MUTTER_GPU_RELEASE_POC_DRM_ONLY_PCI", None)
-    environment.pop("MUTTER_GPU_RELEASE_POC_DRM_ONLY_INTERNAL_PCI", None)
+    for key in list(environment):
+        if key.startswith("MUTTER_GPU_RELEASE_POC") or key in {"LD_LIBRARY_PATH", "LD_PRELOAD", "GI_TYPELIB_PATH"}:
+            environment.pop(key)
+    environment["XDG_DATA_DIRS"] = "/usr/local/share:/usr/share"
+    return environment
+
+
+def prepare_environment(state):
+    environment = system_environment()
     if state.get("trial_consumed"):
         raise RuntimeError("单次 PoC 试用已结束，恢复系统 Mutter。")
     manifest = verify_manifest(Path(state["manifest"]))
@@ -135,14 +140,7 @@ def main():
                 consume_trial()
             except Exception as cleanup_error:
                 print("GPU-RELEASE-POC disarm: " + str(cleanup_error), file=sys.stderr)
-        environment = dict(os.environ)
-        environment.pop("MUTTER_GPU_RELEASE_POC", None)
-        environment.pop("MUTTER_GPU_RELEASE_POC_TRACE_DEVICE", None)
-        environment.pop("MUTTER_GPU_RELEASE_POC_TRACE_FDS", None)
-        environment.pop("MUTTER_GPU_RELEASE_POC_DRM_ONLY_PCI", None)
-        environment.pop("MUTTER_GPU_RELEASE_POC_DRM_ONLY_INTERNAL_PCI", None)
-        environment.pop("MUTTER_GPU_RELEASE_POC_CLEAN_CHILD_ENV", None)
-        environment.pop("MUTTER_GPU_RELEASE_POC_ORIGINAL_DATA_DIRS", None)
+        environment = system_environment()
     if args.verify_only:
         print("PoC 环境校验通过；未启动、重启或替换 GNOME。")
         return 0

@@ -1,4 +1,4 @@
-"""Read-only hardware discovery; never assume stable card numbers or PCI BDFs."""
+"""只读硬件发现：以实时 PCI 身份关联 DRM，不能假定 card 编号或 BDF 固定。"""
 
 from .i18n import tr
 import csv

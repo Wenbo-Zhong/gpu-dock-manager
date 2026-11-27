@@ -1,4 +1,4 @@
-"""Isolated hardware worker. No arbitrary shell or arbitrary sysfs path input."""
+"""隔离的硬件工作进程：只接受限定操作和校验过的设备，避免任意路径写入。"""
 import json
 from pathlib import Path
 import re

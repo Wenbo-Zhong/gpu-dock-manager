@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-"""Observe or request the opt-in Mutter PoC; never detach hardware."""
+"""实验控制入口：观察或显式请求 Mutter PoC，不执行硬件解绑或移除。"""
 import argparse
 from datetime import datetime
 import json

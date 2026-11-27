@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-"""Observe NVIDIA EGL device/display FD lifetimes in a disposable child process.
+"""在隔离子进程中观察 NVIDIA EGL 设备与 display 的文件描述符释放时机。
 
 Creates no contexts, surfaces, windows or modesets. Never touches compositor FDs.
 """

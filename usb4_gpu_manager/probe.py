@@ -1,4 +1,4 @@
-"""Run hardware/driver sysfs access in bounded, separately killable processes."""
+"""用独立子进程隔离可能阻塞的驱动读取；超时不拖住服务或界面线程。"""
 
 from .i18n import tr
 import json

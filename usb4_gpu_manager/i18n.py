@@ -1,4 +1,4 @@
-"""User-session gettext catalogs and localization of service-owned messages."""
+"""用户会话 gettext 与服务消息本地化；服务返回的结构化字段保持稳定。"""
 import gettext
 import os
 from pathlib import Path
