@@ -8,6 +8,7 @@ import unittest
 from unittest.mock import Mock, patch
 
 from usb4_gpu_manager import presence, system, controller
+from usb4_gpu_manager.core import operations
 from tests.test_manager import gpu, PROFILE
 
 
@@ -139,7 +140,7 @@ class BoundedIoTests(unittest.TestCase):
     def test_remove_timeout_never_reports_safe_to_unplug(self):
         manager = controller.Controller()
         manager._profile_and_gpu = lambda: (PROFILE, gpu())
-        with patch.object(controller, "holders", return_value={"complete": True, "processes": []}), patch.object(controller, "usb4_inventory", return_value=[]), patch.object(controller, "device_action", side_effect=subprocess.TimeoutExpired(["remove"], 25)):
+        with patch.object(operations, "holders", return_value={"complete": True, "processes": []}), patch.object(operations, "usb4_inventory", return_value=[]), patch.object(operations, "device_action", side_effect=subprocess.TimeoutExpired(["remove"], 25)):
             with self.assertRaisesRegex(RuntimeError, "尚未确认"):
                 manager.perform("detach", {"expected_pci": gpu()["pci"]})
         self.assertEqual(manager.operation["state"], "error")

@@ -15,7 +15,7 @@ DOMAIN = 'gpu-dock-manager'
 
 def extract():
     messages = {}
-    paths = sorted((ROOT / 'usb4_gpu_manager').glob('*.py')) + [ROOT / 'tools/mutter_update_watch.py']
+    paths = sorted((ROOT / 'usb4_gpu_manager').rglob('*.py')) + [ROOT / 'tools/mutter_update_watch.py']
     for path in paths:
         for node in ast.walk(ast.parse(path.read_text())):
             if (isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == 'tr'

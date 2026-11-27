@@ -12,11 +12,13 @@ import gi
 from gi.repository import Gio, GLib
 
 from . import BUS_NAME, BUS_PATH, INTERFACE
-from .controller import Controller
+from .core.controller import Controller
 from .deployment import plan
 from .hardware import recent_events
-from .internal_gpu import ACTIONS as INTERNAL_ACTIONS
 from .probe import bounded_inventory as gpu_inventory, bounded_internal_status
+from .contracts import INTERNAL_ACTIONS, SERVICE_ACTIONS, DEVICE_ACTIONS, valid_options
+from .logind import sleep_inhibitor
+from contextlib import nullcontext
 
 XML = f"""<node><interface name="{INTERFACE}">
 <method name="GetStatus"><arg type="s" direction="out"/></method>
@@ -68,7 +70,7 @@ class Service:
             self.pool.submit(self._preview, parameters.unpack()[0], invocation)
         elif method == "Perform":
             action, raw = parameters.unpack()
-            if len(raw) > 16384 or action not in {"attach", "detach", "queue-detach", "cancel-detach", "deploy", "rollback", "set-automation", *INTERNAL_ACTIONS}:
+            if len(raw) > 16384 or action not in SERVICE_ACTIONS:
                 self.reply(invocation, error=tr('Unsupported request.'))
                 return
             self.pool.submit(self._perform, sender, action, raw, invocation)
@@ -93,7 +95,9 @@ class Service:
     def _perform(self, sender, action, raw, invocation):
         try:
             options = json.loads(raw)
-            if action in {"attach", "detach", "queue-detach", *INTERNAL_ACTIONS} and not self.controller.get_status().get("can_mutate_devices", False):
+            if not valid_options(action, options):
+                raise ValueError(tr('Unsupported operation or options.'))
+            if action in DEVICE_ACTIONS and not self.controller.get_status().get("can_mutate_devices", False):
                 raise RuntimeError(tr('Detailed device status is stale or driver cleanup is incomplete. Recover the driver first.'))
             authorization = ("manage-internal" if action in INTERNAL_ACTIONS else
                              "configure" if action in {"deploy", "rollback"} else "manage")
@@ -106,11 +110,11 @@ class Service:
             elif action == "set-automation":
                 value = self.controller.perform(action, options)
             elif action in INTERNAL_ACTIONS:
-                # Keep the session client's audio-release scope alive until the
-                # driver operation actually finishes, including failure rollback.
+                # 同步等待驱动切换及失败回滚，客户端收到回执后才能恢复会话音频。
                 value = self.controller.perform(action, options)
             else:
-                # Return immediately after authorization; progress is exposed in GetStatus.
+                # 授权后先占用操作槽再提交后台任务；回执仅表示接受，进度由 GetStatus 提供。
+                # 后台任务归服务持有，客户端退出不会取消已经接受的任务。
                 token = self.controller.reserve_operation(action, options)
                 try:
                     self.pool.submit(self._job, action, options, token)
@@ -131,24 +135,15 @@ class Service:
             GLib.idle_add(self.reply, invocation, None, error)
 
     def _job(self, action, options, reservation):
-        inhibitor = None
         try:
-            if action in {"deploy", "rollback"}:
-                reply, descriptors = self.connection.call_with_unix_fd_list_sync(
-                    "org.freedesktop.login1", "/org/freedesktop/login1",
-                    "org.freedesktop.login1.Manager", "Inhibit",
-                    GLib.Variant("(ssss)", ("sleep:shutdown", "USB4 GPU Manager",
-                                            "Changing GPU configuration", "block")),
-                    GLib.VariantType.new("(h)"), Gio.DBusCallFlags.NONE, 5000, None, None)
-                inhibitor = descriptors.get(reply.unpack()[0])
-            self.controller.perform(action, options, reservation=reservation)
+            scope = (sleep_inhibitor(self.connection, "Changing GPU configuration")
+                     if action in {"deploy", "rollback"} else nullcontext())
+            with scope:
+                self.controller.perform(action, options, reservation=reservation)
         except Exception as error:
             # 包括获取 inhibitor 失败：只有拥有预约的任务可以修改状态、释放槽位。
             self.controller.fail_reserved(reservation, error)
             logging.getLogger("usb4-gpu-manager").exception("Manager operation failed")
-        finally:
-            if inhibitor is not None:
-                os.close(inhibitor)
 
     def acquired(self, connection, name):
         self.connection = connection

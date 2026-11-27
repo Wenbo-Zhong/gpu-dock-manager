@@ -10,6 +10,7 @@ import unittest
 from unittest.mock import Mock, patch
 
 from usb4_gpu_manager import controller, deployment
+from usb4_gpu_manager.core import operations
 from usb4_gpu_manager.daemon import Service
 from usb4_gpu_manager.gui import Window
 from tests.test_manager import PROFILE, gpu
@@ -135,13 +136,13 @@ class ControllerRegressionTests(unittest.TestCase):
         def wait(_):
             manager.sleeping = True
 
-        with (patch.object(controller, "sleep_inhibitor", side_effect=inhibitor) as inhibit,
-              patch.object(controller.Path, "write_text"),
-              patch.object(controller, "gpu_inventory", return_value=[selected]),
-              patch.object(controller, "read", return_value="0x1000 0x2000"),
+        with (patch.object(operations, "sleep_inhibitor", side_effect=inhibitor) as inhibit,
+              patch.object(operations.Path, "write_text"),
+              patch.object(operations, "gpu_inventory", return_value=[selected]),
+              patch.object(operations, "read", return_value="0x1000 0x2000"),
               patch.object(manager, "_keep_awake"),
               patch.object(controller.time, "sleep", side_effect=wait),
-              patch.object(controller, "command") as run):
+              patch.object(operations, "command") as run):
             with self.assertRaises(RuntimeError):
                 manager._attach_locked(PROFILE)
             inhibit.assert_called_once()
@@ -151,7 +152,7 @@ class ControllerRegressionTests(unittest.TestCase):
         selected = gpu(external_display_state="connected", connectors=[
             {"name": name, "kind": "external", "status": "connected"} for name in ("DP-1", "DP-2")])
         with (patch.object(self.manager, "_profile_and_gpu", return_value=(PROFILE, selected)),
-              patch.object(controller, "device_action") as remove):
+              patch.object(operations, "device_action") as remove):
             with self.assertRaises(RuntimeError):
                 self.manager._detach(selected, allow_displays=True, allowed_displays={"DP-1"})
             remove.assert_not_called()
@@ -214,7 +215,7 @@ class DistributedSourceTests(unittest.TestCase):
     def test_install_guard_covers_copy_and_service_start(self):
         text = (ROOT / "install.sh").read_text()
         guard = text.index("RefuseManualStart=yes")
-        copy = text.index('for file in "$source_dir"/usb4_gpu_manager')
+        copy = text.index('"$source_dir/packaging/files.py"')
         release = text.index('rm -f "$upgrade_guard"')
         start = text.index("systemctl enable --now")
         self.assertLess(guard, copy)

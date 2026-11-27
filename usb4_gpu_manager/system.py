@@ -8,28 +8,10 @@ import subprocess
 import signal
 import tempfile
 import threading
-from contextlib import contextmanager
+from .logind import sleep_inhibitor
 
 _stalled = {}
 _stalled_lock = threading.Lock()
-
-
-@contextmanager
-def sleep_inhibitor():
-    """持有 logind 文件描述符期间禁止睡眠，退出或失败都释放锁。"""
-    from gi.repository import Gio, GLib
-    bus = Gio.bus_get_sync(Gio.BusType.SYSTEM, None)
-    reply, descriptors = bus.call_with_unix_fd_list_sync(
-        "org.freedesktop.login1", "/org/freedesktop/login1",
-        "org.freedesktop.login1.Manager", "Inhibit",
-        GLib.Variant("(ssss)", ("sleep:shutdown", "USB4 GPU Manager",
-                                "Changing GPU drivers", "block")),
-        GLib.VariantType.new("(h)"), Gio.DBusCallFlags.NONE, 5000, None, None)
-    descriptor = descriptors.get(reply.unpack()[0])
-    try:
-        yield
-    finally:
-        os.close(descriptor)
 
 
 def gpu_holder_hint(process):

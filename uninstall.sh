@@ -49,7 +49,7 @@ rm -f /usr/share/polkit-1/actions/io.github.usb4gpumanager.policy
 rm -f /usr/share/applications/io.github.usb4gpumanager.App.desktop
 rm -f /usr/bin/usb4-gpu-manager /usr/bin/usb4-gpu-managerctl
 rm -f /usr/bin/usb4-gpu-mutter-watch /usr/lib/systemd/user/usb4-gpu-mutter-watch.{service,timer}
-rm -rf /usr/lib/usb4-gpu-manager /usr/share/usb4-gpu-manager
+rm -rf /usr/lib/usb4-gpu-manager /usr/share/usb4-gpu-manager /usr/share/doc/usb4-gpu-manager
 systemctl daemon-reload
 systemctl reload dbus.service
 echo 'Application removed. Deployment backups in /var/lib/usb4-gpu-manager were retained.'

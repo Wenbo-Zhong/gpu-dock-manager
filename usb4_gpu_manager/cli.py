@@ -8,8 +8,8 @@ import os
 import sys
 
 from .client import Client
-from .displays import INTERNAL_DISPLAY_ACTIONS
-from .internal_gpu import ACTIONS as INTERNAL_ACTIONS, internal_switch_blocker, internal_switch_needed
+from .contracts import INTERNAL_DISPLAY_ACTIONS, INTERNAL_ACTIONS
+from .internal_gpu import internal_switch_blocker, internal_switch_needed
 
 
 def main():

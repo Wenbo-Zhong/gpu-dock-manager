@@ -10,13 +10,15 @@ from gi.repository import Gio, GLib
 
 from . import BUS_NAME, BUS_PATH, INTERFACE
 from .deployment import suggested_profile
-from .displays import DesktopDisplays, INTERNAL_DISPLAY_ACTIONS, internal_display_data
+from .desktop.gnome import DesktopDisplays
+from .desktop.common import internal_display_data
+from .contracts import INTERNAL_DISPLAY_ACTIONS
 from .hardware import recent_events, service_status
 from .probe import bounded_snapshot as snapshot
 from .presence import observe, remember_transport
 from .internal_gpu import internal_switch_blocker, internal_switch_needed
 from .system import command
-from .kde_displays import KdeDisplays
+from .desktop.kde import KdeDisplays
 
 
 class Client:
@@ -96,17 +98,20 @@ class Client:
                 return blocker
             raise RuntimeError(blocker)
         pause_audio = any(p["name"] == "wireplumber" for p in status["holders"]["processes"])
+        # 只恢复操作前确实运行的会话音频服务，不能顺便启动用户原本停用的服务。
         running = pause_audio and command(
             ["systemctl", "--user", "is-active", "--quiet", "wireplumber.service"], check=False).returncode == 0
         error = None
         try:
             if running:
                 command(["systemctl", "--user", "stop", "wireplumber.service"], timeout=15)
+            # 内置卸载的回执等待驱动切换结束，音频释放作用域需覆盖失败回滚过程。
             return self.call("Perform", ("internal-detach", json.dumps(options)), "(ss)", timeout=130000)
         except Exception as caught:
             error = caught
             raise
         finally:
+            # 成功和失败均走恢复；恢复错误携带原操作错误，便于判断哪一步需处理。
             if running:
                 try:
                     command(["systemctl", "--user", "start", "wireplumber.service"], timeout=15)

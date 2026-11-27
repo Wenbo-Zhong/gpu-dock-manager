@@ -5,6 +5,7 @@ import subprocess
 from unittest.mock import patch
 
 from usb4_gpu_manager import controller, hardware, internal_gpu
+from usb4_gpu_manager.core import operations
 
 PCI = "0000:65:00.0"
 
@@ -181,7 +182,7 @@ class InternalGpuTests(unittest.TestCase):
 
     def test_service_routes_to_internal_worker_without_external_profile(self):
         manager = controller.Controller()
-        with (patch.object(controller, "internal_device_action") as action,
+        with (patch.object(operations, "internal_device_action") as action,
               patch.object(manager, "_profile_and_gpu") as external):
             manager.perform("internal-detach", {"expected_pci": PCI})
         action.assert_called_once_with("internal-detach", PCI, protect_connected=False)

@@ -66,7 +66,7 @@ class I18nTests(unittest.TestCase):
                 source = {field for _, field, _, _ in Formatter().parse(key) if field is not None}
                 target = {field for _, field, _, _ in Formatter().parse(entries[key]) if field is not None}
                 self.assertEqual(source, target, (language, key))
-        for path in LOCALES.parent.glob('*.py'):
+        for path in LOCALES.parent.rglob('*.py'):
             for node in ast.walk(ast.parse(path.read_text())):
                 if (isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == 'tr'
                         and node.args and isinstance(node.args[0], ast.Constant)):

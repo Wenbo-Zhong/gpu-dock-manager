@@ -49,40 +49,8 @@ fi
 if systemctl cat usb4-gpu-manager.service >/dev/null 2>&1; then
     systemctl stop usb4-gpu-manager.service
 fi
-install -d -m 0755 /usr/lib/usb4-gpu-manager/usb4_gpu_manager /usr/share/dbus-1/system-services /etc/dbus-1/system.d /usr/share/polkit-1/actions /usr/share/applications
-for file in "$source_dir"/usb4_gpu_manager/*.py; do
-    install -o root -g root -m 0644 "$file" /usr/lib/usb4-gpu-manager/usb4_gpu_manager/
-done
-cp -R "$source_dir/usb4_gpu_manager/locales" /usr/lib/usb4-gpu-manager/usb4_gpu_manager/
-chown -R root:root /usr/lib/usb4-gpu-manager/usb4_gpu_manager/locales
-for file in gui_entry.py daemon_entry.py cli_entry.py; do
-    install -o root -g root -m 0644 "$source_dir/data/$file" /usr/lib/usb4-gpu-manager/
-done
-install -o root -g root -m 0644 "$source_dir/data/usb4-gpu-manager.service" /etc/systemd/system/
-install -o root -g root -m 0644 "$source_dir/data/io.github.usb4gpumanager.Manager.conf" /etc/dbus-1/system.d/
-install -o root -g root -m 0644 "$source_dir/data/io.github.usb4gpumanager.Manager.service" /usr/share/dbus-1/system-services/
-install -o root -g root -m 0644 "$source_dir/data/io.github.usb4gpumanager.policy" /usr/share/polkit-1/actions/
-install -o root -g root -m 0644 "$source_dir/data/io.github.usb4gpumanager.App.desktop" /usr/share/applications/
-cat > /usr/bin/usb4-gpu-manager <<'SH'
-#!/bin/sh
-exec /usr/bin/python3 -I /usr/lib/usb4-gpu-manager/gui_entry.py "$@"
-SH
-cat > /usr/bin/usb4-gpu-managerctl <<'SH'
-#!/bin/sh
-exec /usr/bin/python3 -I /usr/lib/usb4-gpu-manager/cli_entry.py "$@"
-SH
-chmod 0755 /usr/bin/usb4-gpu-manager /usr/bin/usb4-gpu-managerctl
-install -Dm 0755 "$source_dir/tools/mutter_update_watch.py" /usr/bin/usb4-gpu-mutter-watch
-for unit in "$source_dir"/data/usb4-gpu-mutter-watch.*; do
-    install -Dm 0644 "$unit" "/usr/lib/systemd/user/${unit##*/}"
-done
-share=/usr/share/usb4-gpu-manager
-install -Dm 0644 "$source_dir/skills/mutter-egpu-port/SKILL.md" "$share/skills/mutter-egpu-port/SKILL.md"
-install -Dm 0644 "$source_dir/docs/mutter-porting.md" "$share/mutter-porting.md"
-install -d "$share/mutter-poc/overlay" "$share/mutter-poc/tests"
-install -m 0644 "$source_dir"/experimental/mutter-poc/{*.py,*.json,*.patch,README.md,COPYING.GPL-2} "$share/mutter-poc/"
-install -m 0644 "$source_dir"/experimental/mutter-poc/overlay/* "$share/mutter-poc/overlay/"
-install -m 0644 "$source_dir"/experimental/mutter-poc/tests/*.[ch] "$share/mutter-poc/tests/"
+# 文件清单与原生包相同；升级保护和服务启停仍只由安装入口负责。
+/usr/bin/python3 -I "$source_dir/packaging/files.py" --root / --live-install
 systemctl daemon-reload
 systemctl reload dbus.service
 # 失败时保留保护；所有文件安装完成才允许服务再次启动。

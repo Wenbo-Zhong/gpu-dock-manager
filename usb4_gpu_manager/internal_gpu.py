@@ -6,8 +6,8 @@ import re
 import subprocess
 
 from .system import command, read, gpu_holder_hint
+from .contracts import INTERNAL_ACTIONS as ACTIONS
 
-ACTIONS = {"internal-attach", "internal-detach"}
 GPU_ID = "0x2820"
 AUDIO_ID = "0x22bd"
 PCI_ROOT = Path("/sys/bus/pci")

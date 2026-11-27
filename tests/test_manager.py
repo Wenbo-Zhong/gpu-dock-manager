@@ -7,6 +7,7 @@ import unittest
 from unittest.mock import patch
 
 from usb4_gpu_manager import controller, deployment, hardware
+from usb4_gpu_manager.core import operations
 from usb4_gpu_manager.worker import remove_gpu
 
 
@@ -118,7 +119,7 @@ class SafetyTests(unittest.TestCase):
             def action(name, selected, **_):
                 self.assertEqual(name, "remove")
                 remove_gpu(selected, base)
-            with patch("usb4_gpu_manager.worker.syslog.syslog"), patch("usb4_gpu_manager.worker.syslog.openlog"), patch.object(controller, "Path", side_effect=mapped), patch.object(controller, "device_action", side_effect=action), patch.object(controller, "holders", return_value={"complete": True, "processes": []}), patch.object(controller, "usb4_inventory", return_value=[]), patch.object(controller, "gpu_inventory", return_value=[]), patch.object(controller, "command", return_value=subprocess.CompletedProcess([], 0, "", "")) as run:
+            with patch("usb4_gpu_manager.worker.syslog.syslog"), patch("usb4_gpu_manager.worker.syslog.openlog"), patch.object(operations, "Path", side_effect=mapped), patch.object(operations, "device_action", side_effect=action), patch.object(operations, "holders", return_value={"complete": True, "processes": []}), patch.object(operations, "usb4_inventory", return_value=[]), patch.object(operations, "gpu_inventory", return_value=[]), patch.object(operations, "command", return_value=subprocess.CompletedProcess([], 0, "", "")) as run:
                 manager._detach(gpu())
                 run.assert_not_called()
             self.assertEqual((base / "0000:43:00.0/remove").read_text(), "1\n")
